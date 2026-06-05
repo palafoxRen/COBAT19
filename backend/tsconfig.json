@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",                          /* Versión de JS moderna y compatible con Node moderno */
+    "module": "commonjs",                        /* Estándar nativo y ultra estable para Express */
+    "rootDir": "./src",                          /* Dónde buscará tus archivos de código .ts */
+    "outDir": "./dist",                          /* Dónde guardará el código compilado a .js */
+    
+    "esModuleInterop": true,                     /* Permite importaciones limpias como: import express from 'express' */
+    "forceConsistentCasingInFileNames": true,   /* Evita problemas si nombras un archivo con mayúsculas y lo llamas en minúsculas */
+    "skipLibCheck": true,                        /* No revisa los tipos de node_modules, haciendo la compilación instantánea */
+
+
+    "strict": true,                              /* Habilita revisiones estrictas para que tu código sea súper seguro */
+    "noUncheckedIndexedAccess": true,            /* Valida de forma segura el acceso a arreglos y objetos */
+    "noImplicitReturns": true,                   /* Obliga a que todas las funciones devuelvan un valor de forma explícita */
+    "noUnusedLocals": true,                      /* Te avisa si dejas variables declaradas que olvidaste usar */
+    "noUnusedParameters": true                   /* Te avisa si tus funciones reciben parámetros que no utilizas */
+  },
+  "include": ["src/**/*"]                        /* Le dice a TS que solo se concentre en compilar la carpeta src */
+}
