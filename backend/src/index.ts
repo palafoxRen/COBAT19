@@ -2,6 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import pool from './config/db';
+import libroRoutes from './routes/libroRoutes';
 
 dotenv.config();
 
@@ -11,6 +12,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+//ruta de monitoreo base
 app.get('/api/status', async (req: Request, res: Response) => {
     try {
         const dbTest = await pool.query('SELECT NOW()');
@@ -28,6 +30,8 @@ app.get('/api/status', async (req: Request, res: Response) => {
         });
     }
 });
+
+app.use('/api/Libros', libroRoutes);
 
 app.listen(PORT, () => {
     console.log(`[server]: Servidor corriendo en http://localhost:${PORT}`);
