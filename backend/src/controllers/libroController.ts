@@ -54,8 +54,29 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<void> 
         `;
 
         await client.query(insertEjemplarQuery, [libro_inventario, idLibroNuevo]);
+        await client.query('COMMIT');
 
-        
+        res.status(201).json({
+            success: true,
+            message: 'El libro y el ejemplar fisico fueron registrados.',
+            data: {
+                id_libro: idLibroNuevo,
+                titulo,
+                autor,
+                libro_inventario
+            }
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error en el registro: ', error);
+
+        res.status(500).json({
+            sucess: false,
+            message: 'Error al registrar el material.',
+            error: error instanceof Error ? error.message : error
+        });
+    } finally {
+        client.release();
     }
 }
 };
