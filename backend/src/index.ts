@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 //ruta de monitoreo base
-app.get('/api/status', async (req: Request, res: Response) => {
+app.get('/api/status', async (_req: Request, res: Response) => {
     try {
         const dbTest = await pool.query('SELECT NOW()');
         res.json({
