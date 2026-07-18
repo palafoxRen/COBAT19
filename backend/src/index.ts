@@ -31,7 +31,7 @@ app.get('/api/status', async (_req: Request, res: Response) => {
     }
 });
 
-app.use('/api/Libros', libroRoutes);
+app.use('/api/libros', libroRoutes);
 
 app.listen(PORT, () => {
     console.log(`[server]: Servidor corriendo en http://localhost:${PORT}`);
