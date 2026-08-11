@@ -1,120 +1,771 @@
-// src/components/public/CatalogoPublico.jsx
-import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Badge } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
-import api from '../../api/axios';
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+    BookOpen,
+    Search,
+    Smartphone,
+    CheckCircle2,
+    Sparkles,
+    FlaskConical,
+    History,
+    Calculator,
+    Globe,
+    Languages,
+    Music,
+    Dna,
+    ArrowRight,
+} from "lucide-react";
+import api from "../../api/axios";
 
-const CatalogoPublico = () => {
-    const [libros, setLibros] = useState([]);
-    const [busqueda, setBusqueda] = useState('');
-    const [cargando, setCargando] = useState(false);
+// Mantenemos las categorías con íconos fijos (solo para mostrar los botones)
+const CATEGORIES = [
+    { id: "literatura", name: "Literatura", icon: BookOpen, bg: "#f5e0e3" },
+    { id: "ciencia", name: "Ciencia", icon: FlaskConical, bg: "#f7e6e8" },
+    { id: "historia", name: "Historia", icon: History, bg: "#ffffff" },
+    { id: "matematicas", name: "Matemáticas", icon: Calculator, bg: "#ffffff" },
+    { id: "geografia", name: "Geografía", icon: Globe, bg: "#ffffff" },
+    { id: "idiomas", name: "Idiomas", icon: Languages, bg: "#f5e0e3" },
+    { id: "arte", name: "Arte y música", icon: Music, bg: "#f7e6e8" },
+    { id: "biologia", name: "Biología", icon: Dna, bg: "#ffffff" },
+];
 
+export default function CatalogoPublico() {
+    const navigate = useNavigate();
+    const [books, setBooks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [query, setQuery] = useState("");
+    const [submittedQuery, setSubmittedQuery] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState(null);
+
+    // Cargar libros desde la API
     useEffect(() => {
-        const fetchLibros = async () => {
-            setCargando(true);
+        const fetchBooks = async () => {
             try {
-                const res = await api.get('/libros');
-                setLibros(res.data.data || []);
-            } catch (error) {
-                console.error('Error al cargar catálogo:', error);
+                setLoading(true);
+                const response = await api.get("/libros");
+                // Asegurar que cada libro tenga un campo 'categoria' (si no, asignar null)
+                const librosConCategoria = (response.data.data || []).map(libro => ({
+                    ...libro,
+                    categoria: libro.categoria || null,
+                }));
+                setBooks(librosConCategoria);
+                setError(null);
+            } catch (err) {
+                console.error("Error al cargar catálogo:", err);
+                setError("No se pudo cargar el catálogo. Intenta más tarde.");
             } finally {
-                setCargando(false);
+                setLoading(false);
             }
         };
-        fetchLibros();
+        fetchBooks();
     }, []);
 
-    const filtered = libros.filter(l =>
-        l.titulo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        l.autor?.toLowerCase().includes(busqueda.toLowerCase())
-    );
+    // Filtrar libros localmente (sin recargar)
+    const filteredBooks = useMemo(() => {
+        let result = books;
+
+        // Búsqueda por texto
+        if (submittedQuery.trim()) {
+            const q = submittedQuery.toLowerCase();
+            result = result.filter(
+                (b) =>
+                    b.titulo?.toLowerCase().includes(q) ||
+                    b.autor?.toLowerCase().includes(q)
+            );
+        }
+
+        // Filtro por categoría
+        if (selectedCategory) {
+            const catName = CATEGORIES.find(c => c.id === selectedCategory)?.name;
+            if (catName) {
+                result = result.filter(b => b.categoria === catName);
+            }
+        }
+
+        return result;
+    }, [books, submittedQuery, selectedCategory]);
+
+    // Estadísticas reales
+    const totalEjemplares = books.reduce((acc, b) => acc + (b.total_ejemplares || 0), 0);
+    const disponibles = books.reduce((acc, b) => acc + (b.disponibles || 0), 0);
+
+    // Últimos 6 libros como "novedades" (orden inverso por id_libro)
+    const novedades = useMemo(() => {
+        return [...books]
+            .sort((a, b) => (b.libro_id || 0) - (a.libro_id || 0))
+            .slice(0, 6);
+    }, [books]);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        setSubmittedQuery(query);
+        document
+            .getElementById("novedades")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    const handleCategoryClick = (cat) => {
+        setSelectedCategory(cat.id === selectedCategory ? null : cat.id);
+    };
+
+    const handleLoginClick = () => {
+        navigate("/login");
+    };
+
+    // Estado de carga
+    if (loading) {
+        return (
+            <div style={{ textAlign: "center", padding: "100px 20px", fontFamily: "'Inter', sans-serif" }}>
+                <p>Cargando catálogo...</p>
+            </div>
+        );
+    }
+
+    // Estado de error
+    if (error) {
+        return (
+            <div style={{ textAlign: "center", padding: "100px 20px", fontFamily: "'Inter', sans-serif" }}>
+                <p style={{ color: "#b91c1c" }}>{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    style={{
+                        marginTop: 16,
+                        padding: "8px 24px",
+                        background: "#6e1c28",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                    }}
+                >
+                    Reintentar
+                </button>
+            </div>
+        );
+    }
 
     return (
-        <Container className="py-4">
-            <h1 className="display-4 mb-4">Biblioteca del COBAT 19</h1>
-            <p className="lead">Expande tu conocimiento. ¡Busca los títulos que tenemos para ti!</p>
+        <div
+            style={{
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                color: "#171717",
+                background: "#ffffff",
+            }}
+        >
+            {/* Header */}
+            <header
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "16px 32px",
+                    borderBottom: "1px solid #eee",
+                    flexWrap: "wrap",
+                    gap: 12,
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div
+                        style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            background: "#6e1c28",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <BookOpen size={18} color="#fff" />
+                    </div>
+                    <span style={{ fontWeight: 700, fontSize: 17 }}>Biblioteca COBAT</span>
+                </div>
 
-            <Row className="mb-4">
-                <Col md={8}>
-                    <Form.Control
-                        type="text"
-                        placeholder="Busca por título, autor..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                        className="form-control-lg"
-                    />
-                </Col>
-                <Col md={4}>
-                    <Button variant="primary" className="w-100">Buscar</Button>
-                </Col>
-            </Row>
+                <nav style={{ display: "flex", gap: 28, fontSize: 14.5, color: "#404040" }}>
+                    <a href="#top" style={{ color: "#404040", textDecoration: "none" }}>
+                        Inicio
+                    </a>
+                    <a href="#novedades" style={{ color: "#404040", textDecoration: "none" }}>
+                        Catálogo
+                    </a>
+                </nav>
 
-            <Row className="mb-4">
-                <Col md={3}>
-                    <Card className="text-center shadow-sm">
-                        <Card.Body>
-                            <h2 className="display-5">{libros.length}</h2>
-                            <Card.Text>Ejemplares totales</Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="text-center shadow-sm">
-                        <Card.Body>
-                            <h2 className="display-5">{libros.filter(l => l.disponibles > 0).length}</h2>
-                            <Card.Text>Disponibles</Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="text-center shadow-sm">
-                        <Card.Body>
-                            <h2 className="display-5">124</h2>
-                            <Card.Text>Novedades del mes</Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                <button
+                    onClick={handleLoginClick}
+                    style={{
+                        border: "1px solid #e3b7bd",
+                        color: "#6e1c28",
+                        background: "#fff",
+                        borderRadius: 8,
+                        padding: "8px 18px",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                    }}
+                >
+                    Iniciar sesión
+                </button>
+            </header>
 
-            <h3 className="mb-3">Busca por categoría</h3>
-            <Row className="mb-4">
-                {['Literatura', 'Ciencia', 'Historia', 'Matemáticas', 'Geografía', 'Idiomas', 'Arte', 'Biología'].map((cat) => (
-                    <Col key={cat} md={3} className="mb-2">
-                        <Button variant="outline-secondary" className="w-100">
-                            {cat}
-                        </Button>
-                    </Col>
+            {/* Hero */}
+            <section
+                id="top"
+                style={{
+                    background:
+                        "linear-gradient(180deg, #faf0f1 0%, #fbf2f3 100%)",
+                    padding: "56px 24px 40px",
+                    textAlign: "center",
+                }}
+            >
+                <span
+                    style={{
+                        display: "inline-block",
+                        border: "1px solid #e3b7bd",
+                        color: "#7a2333",
+                        background: "#fff",
+                        borderRadius: 999,
+                        padding: "5px 16px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        marginBottom: 20,
+                    }}
+                >
+                    Biblioteca del COBAT 19
+                </span>
+
+                <h1
+                    style={{
+                        fontSize: 44,
+                        fontWeight: 800,
+                        margin: "0 0 16px",
+                        lineHeight: 1.15,
+                    }}
+                >
+                    Expande tu{" "}
+                    <span style={{ color: "#7a2333" }}>conocimiento.</span>
+                </h1>
+
+                <p style={{ fontSize: 16, color: "#525252", margin: "0 0 32px" }}>
+                    ¡Busca los títulos que tenemos para ti!
+                </p>
+
+                <form
+                    onSubmit={handleSearch}
+                    style={{
+                        maxWidth: 620,
+                        margin: "0 auto",
+                        display: "flex",
+                        gap: 10,
+                        background: "#fff",
+                        border: "1px solid #e5e5e5",
+                        borderRadius: 12,
+                        padding: 6,
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            flex: 1,
+                            padding: "6px 10px",
+                        }}
+                    >
+                        <Search size={18} color="#a3a3a3" />
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Busca por título, autor..."
+                            style={{
+                                border: "none",
+                                outline: "none",
+                                fontSize: 14.5,
+                                width: "100%",
+                                color: "#171717",
+                            }}
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        style={{
+                            background: "#6e1c28",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 9,
+                            padding: "0 24px",
+                            fontSize: 14.5,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                        }}
+                    >
+                        Buscar
+                    </button>
+                </form>
+            </section>
+
+            {/* Stats */}
+            <section
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 40,
+                    flexWrap: "wrap",
+                    padding: "36px 24px",
+                    borderBottom: "1px solid #f0f0f0",
+                }}
+            >
+                {[
+                    { icon: Smartphone, label: "Ejemplares totales", value: totalEjemplares.toLocaleString() + "+" },
+                    { icon: CheckCircle2, label: "Disponibles", value: disponibles.toLocaleString() },
+                    { icon: Sparkles, label: "Novedades del mes", value: novedades.length.toString() },
+                ].map(({ icon: Icon, label, value }) => (
+                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: "50%",
+                                background: "#f9ecee",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Icon size={18} color="#7a2333" />
+                        </div>
+                        <div>
+                            <p style={{ margin: 0, fontSize: 13, color: "#737373" }}>{label}</p>
+                            <p style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{value}</p>
+                        </div>
+                    </div>
                 ))}
-            </Row>
+            </section>
 
-            <h3 className="mb-3">Novedades</h3>
-            <Row>
-                {cargando ? (
-                    <p>Cargando libros...</p>
-                ) : filtered.length === 0 ? (
-                    <p>No se encontraron libros</p>
-                ) : (
-                    filtered.slice(0, 6).map((libro) => (
-                        <Col key={libro.libro_id} md={4} className="mb-3">
-                            <Card className="shadow-sm h-100">
-                                <Card.Body>
-                                    <Card.Title>{libro.titulo}</Card.Title>
-                                    <Card.Subtitle className="mb-2 text-muted">{libro.autor}</Card.Subtitle>
-                                    <Badge bg="info">{libro.tematica || 'General'}</Badge>
-                                    <div className="mt-2">
-                                        <small>Disponibles: {libro.disponibles || 0}</small>
-                                    </div>
-                                    <Link to={`/libro/${libro.libro_id}`} className="btn btn-primary btn-sm mt-2">
-                                        Ver detalles
-                                    </Link>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    ))
+            {/* Categorías */}
+            <section style={{ padding: "56px 32px", maxWidth: 1200, margin: "0 auto" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-end",
+                        flexWrap: "wrap",
+                        gap: 12,
+                        marginBottom: 28,
+                    }}
+                >
+                    <div>
+                        <h2 style={{ fontSize: 26, fontWeight: 800, margin: "0 0 6px" }}>
+                            Busca por categoría
+                        </h2>
+                        <p style={{ margin: 0, color: "#737373", fontSize: 14.5 }}>
+                            Encuentra temas específicos o colecciones académicos...
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: 20,
+                    }}
+                >
+                    {CATEGORIES.map((cat) => {
+                        const Icon = cat.icon;
+                        const isSelected = selectedCategory === cat.id;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => handleCategoryClick(cat)}
+                                style={{
+                                    textAlign: "left",
+                                    border: isSelected ? "2px solid #7a2333" : "1px solid #ececec",
+                                    background: cat.bg,
+                                    borderRadius: 14,
+                                    padding: "22px 20px",
+                                    cursor: "pointer",
+                                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                                    boxShadow: isSelected ? "0 4px 14px rgba(107,33,168,0.15)" : "none",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+                                onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                            >
+                                <div
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 10,
+                                        background: "#fff",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginBottom: 14,
+                                        border: "1px solid #ececec",
+                                    }}
+                                >
+                                    <Icon size={19} color="#404040" />
+                                </div>
+                                <p style={{ margin: "0 0 3px", fontWeight: 700, fontSize: 15.5 }}>
+                                    {cat.name}
+                                </p>
+                                <p style={{ margin: 0, fontSize: 13, color: "#737373" }}>
+                                    {books.filter(b => b.categoria === cat.name).length} Libros
+                                </p>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {selectedCategory && (
+                    <p style={{ marginTop: 18, fontSize: 13.5, color: "#7a2333" }}>
+                        Mostrando interés en:{" "}
+                        <strong>{CATEGORIES.find((c) => c.id === selectedCategory)?.name}</strong>
+                        {" — "}
+                        <button
+                            onClick={() => setSelectedCategory(null)}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                color: "#737373",
+                                textDecoration: "underline",
+                                cursor: "pointer",
+                                fontSize: 13.5,
+                                padding: 0,
+                            }}
+                        >
+                            quitar filtro
+                        </button>
+                    </p>
                 )}
-            </Row>
-        </Container>
-    );
-};
+            </section>
 
-export default CatalogoPublico;
+            {/* Novedades */}
+            <section
+                id="novedades"
+                style={{
+                    padding: "48px 32px 56px",
+                    maxWidth: 1200,
+                    margin: "0 auto",
+                    borderTop: "1px solid #f0f0f0",
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-end",
+                        flexWrap: "wrap",
+                        gap: 12,
+                        marginBottom: 28,
+                    }}
+                >
+                    <div>
+                        <h2 style={{ fontSize: 26, fontWeight: 800, margin: "0 0 6px" }}>
+                            Novedades
+                        </h2>
+                        <p style={{ margin: 0, color: "#737373", fontSize: 14.5 }}>
+                            {submittedQuery
+                                ? `Resultados para "${submittedQuery}"`
+                                : "Revisa lo nuevo que tenemos."}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setQuery("");
+                            setSubmittedQuery("");
+                            setSelectedCategory(null);
+                        }}
+                        style={{
+                            border: "1px solid #e0e0e0",
+                            background: "#fff",
+                            borderRadius: 8,
+                            padding: "8px 20px",
+                            fontSize: 14,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                        }}
+                    >
+                        Ver todos
+                    </button>
+                </div>
+
+                {filteredBooks.length === 0 ? (
+                    <p style={{ color: "#737373", fontSize: 14.5 }}>
+                        No se encontraron libros que coincidan con tu búsqueda.
+                    </p>
+                ) : (
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+                            gap: 20,
+                        }}
+                    >
+                        {filteredBooks.slice(0, 6).map((book) => (
+                            <div
+                                key={book.libro_id}
+                                onClick={() => alert(`Ver detalles de "${book.titulo}"`)}
+                                style={{ cursor: "pointer" }}
+                            >
+                                <div
+                                    style={{
+                                        position: "relative",
+                                        borderRadius: 12,
+                                        overflow: "hidden",
+                                        marginBottom: 10,
+                                        aspectRatio: "3/4",
+                                        background: "#f2f2f2",
+                                    }}
+                                >
+                                    {book.imagen ? (
+                                        <img
+                                            src={book.imagen}
+                                            alt={book.titulo}
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
+                                                display: "block",
+                                            }}
+                                        />
+                                    ) : (
+                                        <div
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                background: "#f2f2f2",
+                                                color: "#999",
+                                                fontSize: 14,
+                                            }}
+                                        >
+                                            Sin imagen
+                                        </div>
+                                    )}
+                                    {book.disponibles > 0 && (
+                                        <span
+                                            style={{
+                                                position: "absolute",
+                                                top: 10,
+                                                left: 10,
+                                                background: "#6e1c28",
+                                                color: "#fff",
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                padding: "3px 10px",
+                                                borderRadius: 999,
+                                            }}
+                                        >
+                                            Disponible
+                                        </span>
+                                    )}
+                                </div>
+                                <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 14.5 }}>
+                                    {book.titulo}
+                                </p>
+                                <p style={{ margin: 0, fontSize: 13, color: "#737373" }}>
+                                    {book.autor}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            {/* CTA ayuda */}
+            <section style={{ padding: "0 32px 56px", maxWidth: 1200, margin: "0 auto" }}>
+                <div
+                    style={{
+                        background: "linear-gradient(135deg, #6e1c28 0%, #9a3040 100%)",
+                        borderRadius: 20,
+                        padding: "48px 40px",
+                        textAlign: "center",
+                        position: "relative",
+                        overflow: "hidden",
+                    }}
+                >
+                    <BookOpen
+                        size={220}
+                        color="rgba(255,255,255,0.08)"
+                        style={{ position: "absolute", right: 20, bottom: -30 }}
+                    />
+                    <h2
+                        style={{
+                            color: "#fff",
+                            fontSize: 28,
+                            fontWeight: 800,
+                            margin: "0 0 14px",
+                            position: "relative",
+                        }}
+                    >
+                        ¿Necesitas ayuda?
+                    </h2>
+                    <p
+                        style={{
+                            color: "#f0d0d4",
+                            maxWidth: 520,
+                            margin: "0 auto 24px",
+                            fontSize: 15,
+                            lineHeight: 1.6,
+                            position: "relative",
+                        }}
+                    >
+                        Nuestros bibliotecarios siempre están disponibles para resolver tus
+                        dudas y ayudarte a encontrar el libro que buscas.
+                    </p>
+                    <button
+                        onClick={() => alert("Ir a la biblioteca")}
+                        style={{
+                            background: "#fff",
+                            color: "#6e1c28",
+                            border: "none",
+                            borderRadius: 9,
+                            padding: "12px 28px",
+                            fontSize: 14.5,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            position: "relative",
+                        }}
+                    >
+                        Ve a la biblioteca
+                    </button>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer style={{ borderTop: "1px solid #f0f0f0", padding: "40px 32px 24px" }}>
+                <div
+                    style={{
+                        maxWidth: 1200,
+                        margin: "0 auto",
+                        display: "grid",
+                        gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+                        gap: 32,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <div
+                                style={{
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: 7,
+                                    background: "#6e1c28",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <BookOpen size={14} color="#fff" />
+                            </div>
+                            <span style={{ fontWeight: 700, fontSize: 15 }}>
+                                BIBLIOTECA COBAT 19
+                            </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 13.5, color: "#737373" }}>
+                            -La cultura como creadora de la paz.
+                        </p>
+                    </div>
+
+                    <div>
+                        <p
+                            style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                letterSpacing: 0.4,
+                                color: "#a3a3a3",
+                                marginBottom: 12,
+                            }}
+                        >
+                            NAVEGACIÓN
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13.5 }}>
+                            <a href="#top" style={{ color: "#404040", textDecoration: "none" }}>
+                                Inicio
+                            </a>
+                            <a href="#novedades" style={{ color: "#404040", textDecoration: "none" }}>
+                                Catálogo
+                            </a>
+                            <button
+                                onClick={handleLoginClick}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#404040",
+                                    fontSize: 13.5,
+                                    padding: 0,
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Acceso de bibliotecarios
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p
+                            style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                letterSpacing: 0.4,
+                                color: "#a3a3a3",
+                                marginBottom: 12,
+                            }}
+                        >
+                            HORARIOS
+                        </p>
+                        <p style={{ margin: "0 0 6px", fontSize: 13.5, color: "#404040" }}>
+                            Lunes - Viernes 08:00 - 17:00
+                        </p>
+                        <p style={{ margin: 0, fontSize: 13.5, color: "#404040" }}>
+                            Sábado: Cerrado
+                        </p>
+                    </div>
+
+                    <div>
+                        <p
+                            style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                letterSpacing: 0.4,
+                                color: "#a3a3a3",
+                                marginBottom: 12,
+                            }}
+                        >
+                            CONTACTO
+                        </p>
+                        <p style={{ margin: "0 0 6px", fontSize: 13.5, color: "#404040" }}>
+                            COBAT 19 Plantel Xaloztoc
+                        </p>
+                        <p style={{ margin: "0 0 6px", fontSize: 13.5, color: "#404040" }}>
+                            plantel19@cobatlaxcala.edu.mx   
+                        </p>
+                        <p style={{ margin: 0, fontSize: 13.5, color: "#404040" }}>
+                            (241) 41-3-02-57
+                        </p>
+                    </div>
+                </div>
+
+                <p
+                    style={{
+                        textAlign: "center",
+                        fontSize: 12.5,
+                        color: "#a3a3a3",
+                        marginTop: 32,
+                        borderTop: "1px solid #f0f0f0",
+                        paddingTop: 20,
+                    }}
+                >
+                    2026 Biblioteca COBAT19. Todos los derechos reservados.
+                </p>
+            </footer>
+        </div>
+    );
+}
