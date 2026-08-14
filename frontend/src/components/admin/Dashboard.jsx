@@ -14,6 +14,15 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../api/axios";
 
+const esVencido = (p) => {
+    if (p.estado_prestamo !== "Activo" || !p.fecha_limite) return false;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const limite = new Date(p.fecha_limite);
+    limite.setHours(0, 0, 0, 0);
+    return limite < hoy;
+};
+
 export default function AdminDashboard() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -64,9 +73,7 @@ export default function AdminDashboard() {
                 const activos = prestamos.filter(
                     (p) => p.estado_prestamo === "Activo",
                 ).length;
-                const vencidos = prestamos.filter(
-                    (p) => p.estado_prestamo === "Vencido",
-                ).length;
+                const vencidos = prestamos.filter(esVencido).length;
 
                 // Actividad reciente (últimos 5 préstamos)
                 const recent = prestamos
@@ -80,7 +87,7 @@ export default function AdminDashboard() {
                         time: p.fecha_salida
                             ? new Date(p.fecha_salida).toLocaleDateString()
                             : "Fecha desconocida",
-                        status: p.estado_prestamo === "Vencido" ? "Flagged" : "Verified",
+                        status: esVencido(p) ? "Flagged" : "Verified",
                     }));
 
                 setTotalLibros(totalLibrosCount);
@@ -129,9 +136,7 @@ export default function AdminDashboard() {
             const activos = prestamos.filter(
                 (p) => p.estado_prestamo === "Activo",
             ).length;
-            const vencidos = prestamos.filter(
-                (p) => p.estado_prestamo === "Vencido",
-            ).length;
+            const vencidos = prestamos.filter(esVencido).length;
 
             const recent = prestamos
                 .sort((a, b) => new Date(b.fecha_salida) - new Date(a.fecha_salida))
@@ -144,7 +149,7 @@ export default function AdminDashboard() {
                     time: p.fecha_salida
                         ? new Date(p.fecha_salida).toLocaleDateString()
                         : "Fecha desconocida",
-                    status: p.estado_prestamo === "Vencido" ? "Flagged" : "Verified",
+                    status: esVencido(p) ? "Flagged" : "Verified",
                 }));
 
             setPrestamosActivos(activos);
