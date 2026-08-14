@@ -246,8 +246,8 @@ export default function AdminDashboard() {
                         Dashboard de la biblioteca
                     </h1>
                     <p style={{ margin: 0, fontSize: 14, color: "#737373" }}>
-                        Bienvenido de nuevo {user?.nombre_completo || "Bibliotecario"}. Aquí
-                        tienes las novedades
+                        Bienvenido de nuevo {user?.nombre || "Bibliotecario"}. Aquí tienes
+                        las novedades
                     </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

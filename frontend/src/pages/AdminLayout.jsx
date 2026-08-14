@@ -194,7 +194,7 @@ const AdminLayout = () => {
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{ textAlign: "right" }}>
                                 <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600 }}>
-                                    {user?.nombre_completo || "Bibliotecario"}
+                                    {user?.nombre || "Bibliotecario"}
                                 </p>
                                 <p style={{ margin: 0, fontSize: 12, color: "#737373" }}>
                                     {user?.rol || "Bibliotecario"}
@@ -214,9 +214,7 @@ const AdminLayout = () => {
                                     fontSize: 13.5,
                                 }}
                             >
-                                {user?.nombre_completo
-                                    ? user.nombre_completo.charAt(0).toUpperCase()
-                                    : "B"}
+                                {user?.nombre ? user.nombre.charAt(0).toUpperCase() : "B"}
                             </div>
                         </div>
                     </div>
