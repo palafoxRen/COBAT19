@@ -66,14 +66,14 @@ export default function GestionPrestamos() {
     // Convierte un registro del backend al formato que necesita la tabla,
     // y excluye los ya devueltos (esta vista es para dar seguimiento a los pendientes).
     //
-    // Nota: el backend nunca guarda estado_prestamo = "Vencido" (solo usa
+    // Nota: el backend nunca guarda estatus_prestamo = "Vencido" (solo usa
     // "Activo" y "Devuelto"), así que el retraso se calcula aquí comparando
     // fecha_limite contra hoy, no leyendo ese estado.
     const loans = useMemo(() => {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
         return prestamos
-            .filter((p) => p.estado_prestamo !== "Devuelto")
+            .filter((p) => p.estatus_prestamo !== "Devuelto")
             .map((p) => {
                 let status = "Activo";
                 if (p.fecha_limite) {
@@ -88,12 +88,12 @@ export default function GestionPrestamos() {
                 }
 
                 return {
-                    id: p.prestamo_id,
+                    id: p.id_prestamo,
                     userType: p.tipo_usuario === "Alumno" ? "Alumno/a" : "Docente",
-                    userLabel: p.usuario_identificador,
-                    initials: initialsFrom(p.usuario_nombre || p.usuario_identificador),
+                    userLabel: p.usuario_detalles,
+                    initials: initialsFrom(p.usuario_nombre || p.usuario_detalles),
                     book: p.titulo || "Sin título",
-                    bookId: p.inventario,
+                    bookId: p.libro_inventario,
                     loanDate: p.fecha_salida
                         ? new Date(p.fecha_salida).toLocaleDateString()
                         : "-",
@@ -111,7 +111,7 @@ export default function GestionPrestamos() {
         const hoyStr = new Date().toLocaleDateString();
         return prestamos.filter(
             (p) =>
-                p.estado_prestamo === "Devuelto" &&
+                p.estatus_prestamo === "Devuelto" &&
                 p.fecha_devolucion &&
                 new Date(p.fecha_devolucion).toLocaleDateString() === hoyStr,
         ).length;
@@ -140,7 +140,7 @@ export default function GestionPrestamos() {
     const handleReturn = async (prestamoId) => {
         if (!window.confirm("¿Confirmar devolución de este libro?")) return;
         try {
-            await api.put(`/prestamos/${prestamoId}/devolver`);
+            await api.put(`/prestamos/${prestamoId}/devolver`, {});
             cargarPrestamos();
         } catch (error) {
             alert("Error al devolver el libro");

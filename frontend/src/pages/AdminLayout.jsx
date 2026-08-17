@@ -2,18 +2,21 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
     BookOpen,
+    Library,
     Bell,
     LayoutGrid,
     ClipboardList,
+    FileText,
     LogOut,
     ChevronRight,
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { to: "/admin", label: "Dashboard", icon: LayoutGrid, end: true },
+    { to: "/admin/libros", label: "Inventario", icon: Library },
     { to: "/admin/prestamos", label: "Préstamos", icon: ClipboardList },
-    // Cuando existan las rutas reales de Inventario, Libros Digitales y Reportes
-    // en App.jsx, agrégalas aquí con el mismo formato para que aparezcan en el menú.
+    { to: "/admin/reportes", label: "Reporte mensual", icon: FileText },
+    { to: "/admin/digitales", label: "Libros digitales", icon: BookOpen },
 ];
 
 const AdminLayout = () => {

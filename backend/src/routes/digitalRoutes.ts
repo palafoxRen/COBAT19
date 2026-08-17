@@ -5,8 +5,8 @@ import { uploadPDF } from '../middlewares/upload';
 
 const router = Router();
 
-router.get('/', getDigitales);
-router.get('/:digital_id/decargar', descargarDigital);
+router.get('/', verifyToken, getDigitales);
+router.get('/:digital_id/descargar', descargarDigital);
 router.post('/', verifyToken, uploadPDF.single('pdf'), uploadDigital);
 
 export default router;

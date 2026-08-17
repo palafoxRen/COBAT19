@@ -1,19 +1,42 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-import { login as apiLogin } from '../api/auth';
+import { login as apiLogin, getPerfil } from '../api/auth';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(
+        () => !!localStorage.getItem('token') && !!localStorage.getItem('user'),
+    );
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
+        let active = true;
         const token = localStorage.getItem('token');
-        if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
+        const storedUser = localStorage.getItem('user');
+
+        if (!token || !storedUser) {
+            return;
         }
-        setLoading(false);
+
+        getPerfil()
+            .then((data) => {
+                if (!active) return;
+                setUser(data.usuario);
+                localStorage.setItem('user', JSON.stringify(data.usuario));
+            })
+            .catch(() => {
+                if (!active) return;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
     }, []);
 
     const login = async (correo, contrasena) => {

@@ -3,7 +3,7 @@ import pool from '../config/db';
 
 // OBTENER TODOS (con búsqueda avanzada)
 export const obtenerLibros = async (req: Request, res: Response): Promise<Response> => {
-  const { titulo, autor, editorial, dewey, isbn, inventario, q } = req.query;
+  const { titulo, autor, editorial, dewey, isbn, inventario, categoria, q } = req.query;
 
   let whereClauses: string[] = [];
   const values: any[] = [];
@@ -27,6 +27,7 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
       values.push(inventario);
       paramIndex++;
     }
+    if (categoria) { whereClauses.push(`l.categoria_id = $${paramIndex}`); values.push(categoria); paramIndex++; }
   }
 
   const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -34,12 +35,14 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
   const query = `
     SELECT 
       l.id_libro, l.titulo, l.autor, l.editorial, l.dewey, l.isbn, l.fecha_registro,
+      l.categoria_id, c.nombre AS categoria_nombre,
       COUNT(e.libro_inventario) AS total_ejemplares,
       SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END) AS disponibles
     FROM libros l
+    LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
     LEFT JOIN ejemplares e ON l.id_libro = e.id_libro
     ${whereSQL}
-    GROUP BY l.id_libro
+    GROUP BY l.id_libro, c.nombre
     ORDER BY l.titulo ASC
   `;
 
@@ -56,7 +59,13 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
 export const obtenerLibroPorId = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
   try {
-    const libroResult = await pool.query('SELECT * FROM libros WHERE id_libro = $1', [id]);
+    const libroResult = await pool.query(
+      `SELECT l.*, c.nombre AS categoria_nombre
+       FROM libros l
+       LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
+       WHERE l.id_libro = $1`,
+      [id]
+    );
     if (libroResult.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Libro no encontrado' });
     }
@@ -75,7 +84,7 @@ export const obtenerLibroPorId = async (req: Request, res: Response): Promise<Re
 
 // REGISTRAR LIBRO (con primer ejemplar) - Ya lo tienes, pero ajustado
 export const registrarLibro = async (req: Request, res: Response): Promise<void> => {
-  const { titulo, autor, editorial, dewey, isbn, libro_inventario } = req.body;
+  const { titulo, autor, editorial, dewey, isbn, libro_inventario, categoria_id } = req.body;
 
   if (!titulo || !autor || !dewey || !libro_inventario) {
     res.status(400).json({
@@ -90,12 +99,12 @@ export const registrarLibro = async (req: Request, res: Response): Promise<void>
     await client.query('BEGIN');
 
     const insertLibroQuery = `
-      INSERT INTO libros (titulo, autor, editorial, dewey, isbn)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO libros (titulo, autor, editorial, dewey, isbn, categoria_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id_libro;
     `;
     const libroResultado = await client.query(insertLibroQuery, [
-      titulo, autor, editorial || null, dewey, isbn || null
+      titulo, autor, editorial || null, dewey, isbn || null, categoria_id || null
     ]);
     const idLibroNuevo = libroResultado.rows[0].id_libro;
 

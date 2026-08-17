@@ -2,6 +2,28 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../config/db";
+import { AuthRequest } from "../middlewares/auth";
+
+export const getPerfil = async (req: AuthRequest, res: Response): Promise<Response> => {
+  const id_usuario = req.usuario?.id_usuario;
+  if (!id_usuario) {
+    return res.status(401).json({ success: false, message: "Usuario no autenticado" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT id_usuario, nombre, correo, rol, activo FROM usuarios WHERE id_usuario = $1",
+      [id_usuario]
+    );
+    if (result.rows.length === 0) {
+      return res.status(401).json({ success: false, message: "Usuario no encontrado" });
+    }
+    return res.json({ success: true, usuario: result.rows[0] });
+  } catch (error) {
+    console.error("Error al obtener perfil:", error);
+    return res.status(500).json({ success: false, message: "Error en el servidor" });
+  }
+};
 
 export const login = async (req: Request, res: Response): Promise<Response> => {
   // Tu frontend envía "usuario_nombre" o "correo" (según lo que hayas puesto)

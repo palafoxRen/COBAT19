@@ -10,12 +10,13 @@ import {
     ChevronRight,
     CheckCircle2,
     X,
+    Folder,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../api/axios";
 
 const esVencido = (p) => {
-    if (p.estado_prestamo !== "Activo" || !p.fecha_limite) return false;
+    if (p.estatus_prestamo !== "Activo" || !p.fecha_limite) return false;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const limite = new Date(p.fecha_limite);
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
     const [prestamosActivos, setPrestamosActivos] = useState(0);
     const [prestamosVencidos, setPrestamosVencidos] = useState(0);
     const [actividadReciente, setActividadReciente] = useState([]);
+    const [categorias, setCategorias] = useState([]);
 
     // Estado para modales
     const [showLoanModal, setShowLoanModal] = useState(false);
@@ -71,7 +73,7 @@ export default function AdminDashboard() {
                 const prestamosRes = await api.get("/prestamos");
                 const prestamos = prestamosRes.data.data || [];
                 const activos = prestamos.filter(
-                    (p) => p.estado_prestamo === "Activo",
+                    (p) => p.estatus_prestamo === "Activo",
                 ).length;
                 const vencidos = prestamos.filter(esVencido).length;
 
@@ -80,15 +82,19 @@ export default function AdminDashboard() {
                     .sort((a, b) => new Date(b.fecha_salida) - new Date(a.fecha_salida))
                     .slice(0, 5)
                     .map((p) => ({
-                        id: p.prestamo_id,
-                        type: p.estado_prestamo === "Activo" ? "loan" : "return",
+                        id: p.id_prestamo,
+                        type: p.estatus_prestamo === "Activo" ? "loan" : "return",
                         title: p.titulo || "Sin título",
-                        user: p.usuario_nombre || p.usuario_identificador || "Desconocido",
+                        user: p.usuario_nombre || p.usuario_detalles || "Desconocido",
                         time: p.fecha_salida
                             ? new Date(p.fecha_salida).toLocaleDateString()
                             : "Fecha desconocida",
                         status: esVencido(p) ? "Flagged" : "Verified",
                     }));
+
+                // Obtener categorías (con conteo de libros)
+                const categoriasRes = await api.get("/categorias");
+                setCategorias(categoriasRes.data.data || []);
 
                 setTotalLibros(totalLibrosCount);
                 setTotalEjemplares(totalEjemplaresCount);
@@ -134,7 +140,7 @@ export default function AdminDashboard() {
             const prestamosRes = await api.get("/prestamos");
             const prestamos = prestamosRes.data.data || [];
             const activos = prestamos.filter(
-                (p) => p.estado_prestamo === "Activo",
+                (p) => p.estatus_prestamo === "Activo",
             ).length;
             const vencidos = prestamos.filter(esVencido).length;
 
@@ -142,10 +148,10 @@ export default function AdminDashboard() {
                 .sort((a, b) => new Date(b.fecha_salida) - new Date(a.fecha_salida))
                 .slice(0, 5)
                 .map((p) => ({
-                    id: p.prestamo_id,
-                    type: p.estado_prestamo === "Activo" ? "loan" : "return",
+                    id: p.id_prestamo,
+                    type: p.estatus_prestamo === "Activo" ? "loan" : "return",
                     title: p.titulo || "Sin título",
-                    user: p.usuario_nombre || p.usuario_identificador || "Desconocido",
+                    user: p.usuario_nombre || p.usuario_detalles || "Desconocido",
                     time: p.fecha_salida
                         ? new Date(p.fecha_salida).toLocaleDateString()
                         : "Fecha desconocida",
@@ -200,6 +206,9 @@ export default function AdminDashboard() {
                 0,
             );
             setTotalEjemplares(totalEjemplaresCount);
+
+            const categoriasRes = await api.get("/categorias");
+            setCategorias(categoriasRes.data.data || []);
 
             setShowBookModal(false);
             setBookForm({ titulo: "", autor: "", dewey: "", inventario: "" });
@@ -309,6 +318,13 @@ export default function AdminDashboard() {
                         value: prestamosActivos.toString(),
                         bg: "#fdeceb",
                         color: "#c0392b",
+                    },
+                    {
+                        icon: Folder,
+                        label: "Categorías",
+                        value: categorias.length.toString(),
+                        bg: "#f5f3ff",
+                        color: "#6d28d9",
                     },
                 ].map((card) => {
                     const Icon = card.icon;
@@ -572,6 +588,121 @@ export default function AdminDashboard() {
                     </button>
                 </div>
             </div>
+
+            {/* Libros por categoría */}
+            <div
+                style={{
+                    background: "#fff",
+                    border: "1px solid #ececec",
+                    borderRadius: 14,
+                    padding: 24,
+                    marginTop: 20,
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 18,
+                    }}
+                >
+                    <div>
+                        <h2 style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 700 }}>
+                            Libros por categoría
+                        </h2>
+                        <p style={{ margin: 0, fontSize: 13, color: "#737373" }}>
+                            Distribución del acervo por categoría
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate("/admin/libros")}
+                        style={{
+                            background: "none",
+                            border: "none",
+                            color: "#7a2333",
+                            fontSize: 13.5,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                        }}
+                    >
+                        Ver inventario
+                    </button>
+                </div>
+
+                {categorias.length === 0 ? (
+                    <p style={{ textAlign: "center", color: "#a3a3a3", margin: 0 }}>
+                        Aún no hay categorías registradas.
+                    </p>
+                ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+                        {categorias.map((c) => {
+                            const max = Math.max(
+                                ...categorias.map((x) => Number(x.total_libros) || 0),
+                                1,
+                            );
+                            const pct = Math.max(
+                                4,
+                                Math.round(((Number(c.total_libros) || 0) / max) * 100),
+                            );
+                            return (
+                                <div
+                                    key={c.categoria_id}
+                                    style={{
+                                        background: "#fafafa",
+                                        border: "1px solid #ececec",
+                                        borderRadius: 12,
+                                        padding: "16px 18px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            marginBottom: 10,
+                                        }}
+                                    >
+                                        <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>
+                                            {c.nombre}
+                                        </p>
+                                        <span
+                                            style={{
+                                                padding: "3px 10px",
+                                                borderRadius: 999,
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                background: "#f5f3ff",
+                                                color: "#6d28d9",
+                                            }}
+                                        >
+                                            {c.total_libros}
+                                        </span>
+                                    </div>
+                                    <div
+                                        style={{
+                                            height: 6,
+                                            borderRadius: 999,
+                                            background: "#f0f0f0",
+                                            overflow: "hidden",
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                height: "100%",
+                                                width: `${pct}%`,
+                                                borderRadius: 999,
+                                                background: "#7a2333",
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
             {/* Modal: registrar préstamo */}
             {showLoanModal && (
                 <div

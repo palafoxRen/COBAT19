@@ -1,12 +1,15 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import pool from './config/db';
 import authRoutes from './routes/authRoutes';
 import libroRoutes from './routes/libroRoutes';
 import ejemplarRoutes from './routes/ejemplarRoutes';
 import prestamoRoutes from './routes/prestamoRoutes';
 import digitalRoutes from './routes/digitalRoutes';
+import categoriaRoutes from './routes/categoriaRoutes';
+import reporteRoutes from './routes/reporteRoutes';
 import { errorHandler } from './middlewares/errorHandler';
 
 dotenv.config();
@@ -23,6 +26,9 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Archivos PDF subidos (libros digitales)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Ruta de estado
 app.get('/api/status', async (_req: Request, res: Response) => {
@@ -49,6 +55,8 @@ app.use('/api/libros', libroRoutes);
 app.use('/api/ejemplares', ejemplarRoutes);
 app.use('/api/prestamos', prestamoRoutes);
 app.use('/api/digitales', digitalRoutes);
+app.use('/api/categorias', categoriaRoutes);
+app.use('/api/reportes', reporteRoutes);
 
 // Middleware de manejo de error
 app.use(errorHandler);

@@ -36,7 +36,7 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
         await client.query('BEGIN');
 
         const ejemplarCheck = await client.query(
-            'SELECT disponibilidad FROM ejemplares WHERE inventario = $1 FOR UPDATE',
+            'SELECT disponibilidad FROM ejemplares WHERE libro_inventario = $1 FOR UPDATE',
             [inventario]
         );
         if (ejemplarCheck.rows.length === 0) {
@@ -55,28 +55,28 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
 
         const insertPrestamo = `
             INSERT INTO prestamos (
-                inventario,
+                libro_inventario,
                 tipo_usuario,
-                usuario_identificador,
                 usuario_nombre,
+                usuario_detalles,
                 fecha_salida,
                 fecha_limite,
-                estado_prestamo,
-                atendido_por
+                estatus_prestamo,
+                id_atendio
             ) VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, 'Activo', $6)
             RETURNING *
         `;
         const prestamoResult = await client.query(insertPrestamo, [
             inventario,
             tipo_usuario,
-            usuario_identificador,
-            usuario_nombre || null,
+            usuario_nombre || usuario_identificador,
+            usuario_identificador || null,
             limite,
             id_atendio,
         ]);
 
         await client.query(
-            'UPDATE ejemplares SET disponibilidad = false WHERE inventario = $1',
+            'UPDATE ejemplares SET disponibilidad = false WHERE libro_inventario = $1',
             [inventario]
         );
 
@@ -94,33 +94,33 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
 // === DEVOLVER PRÉSTAMO ===
 export const devolverPrestamo = async (req: AuthRequest, res: Response): Promise<Response> => {
     const { prestamo_id } = req.params;
-    const { fecha_devolucion } = req.body;
+    const { fecha_devolucion } = req.body || {};
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         const prestamoCheck = await client.query(
-            'SELECT inventario, estado_prestamo FROM prestamos WHERE prestamo_id = $1 FOR UPDATE',
+            'SELECT libro_inventario, estatus_prestamo FROM prestamos WHERE id_prestamo = $1 FOR UPDATE',
             [prestamo_id]
         );
         if (prestamoCheck.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Préstamo no encontrado' });
         }
-        if (prestamoCheck.rows[0].estado_prestamo !== 'Activo') {
+        if (prestamoCheck.rows[0].estatus_prestamo !== 'Activo') {
             return res.status(409).json({ success: false, message: 'El préstamo ya fue devuelto o está vencido' });
         }
 
         const devolucion = fecha_devolucion || new Date().toISOString().split('T')[0];
 
         await client.query(
-            'UPDATE prestamos SET fecha_devolucion = $1, estado_prestamo = $2 WHERE prestamo_id = $3',
+            'UPDATE prestamos SET fecha_devolucion = $1, estatus_prestamo = $2 WHERE id_prestamo = $3',
             [devolucion, 'Devuelto', prestamo_id]
         );
 
         await client.query(
-            'UPDATE ejemplares SET disponibilidad = true WHERE inventario = $1',
-            [prestamoCheck.rows[0].inventario]
+            'UPDATE ejemplares SET disponibilidad = true WHERE libro_inventario = $1',
+            [prestamoCheck.rows[0].libro_inventario]
         );
 
         await client.query('COMMIT');
@@ -141,7 +141,7 @@ export const getPrestamos = async (req: AuthRequest, res: Response): Promise<Res
     const values: any[] = [];
     let paramIndex = 1;
 
-    if (estado) { whereClauses.push(`p.estado_prestamo = $${paramIndex}`); values.push(estado); paramIndex++; }
+    if (estado) { whereClauses.push(`p.estatus_prestamo = $${paramIndex}`); values.push(estado); paramIndex++; }
     if (tipo_usuario) { whereClauses.push(`p.tipo_usuario = $${paramIndex}`); values.push(tipo_usuario); paramIndex++; }
     if (fecha_inicio) { whereClauses.push(`p.fecha_salida >= $${paramIndex}`); values.push(fecha_inicio); paramIndex++; }
     if (fecha_fin) { whereClauses.push(`p.fecha_salida <= $${paramIndex}`); values.push(fecha_fin); paramIndex++; }
@@ -150,14 +150,13 @@ export const getPrestamos = async (req: AuthRequest, res: Response): Promise<Res
     const query = `
         SELECT 
             p.*,
-            e.libro_id,
             l.titulo,
             l.autor,
-            u.nombre_completo as atendido_por
+            u.nombre AS atendido_por
         FROM prestamos p
-        JOIN ejemplares e ON p.inventario = e.inventario
-        JOIN libros l ON e.libro_id = l.libro_id
-        JOIN usuarios u ON p.atendido_por = u.usuario_id
+        JOIN ejemplares e ON p.libro_inventario = e.libro_inventario
+        JOIN libros l ON e.id_libro = l.id_libro
+        JOIN usuarios u ON p.id_atendio = u.id_usuario
         ${whereSQL}
         ORDER BY p.fecha_salida DESC
     `;
