@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { Eye, EyeOff, User, Lock, ShieldCheck, Info, ArrowLeft, BookOpen } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
+import { Eye, EyeOff, User, Lock, Info, ArrowLeft, BookOpen } from "lucide-react";
+import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminLogin() {
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [loginResult, setLoginResult] = useState(null); // null | "success" | "error"
@@ -49,9 +48,9 @@ export default function AdminLogin() {
         setLoginResult("error");
         setErrorMessage(result.message || "Usuario o contraseña incorrectos.");
       }
-    } catch (error) {
+    } catch {
       setLoginResult("error");
-      setErrorMessage("Error al conectar con el servidor. Intenta más tarde.");
+      setErrorMessage("Error al conectar con el servidor. Intenta mas tarde.");
     } finally {
       setLoading(false);
     }

@@ -5,24 +5,17 @@ import api from "../../../api/axios";
 
 export default function ListaLibros() {
     const [libros, setLibros] = useState([]);
-    const [cargando, setCargando] = useState(false);
+    const [cargando, setCargando] = useState(true);
     const [search, setSearch] = useState("");
 
     useEffect(() => {
-        cargarLibros();
+        let cancelled = false;
+        api.get("/libros")
+            .then((res) => { if (!cancelled) setLibros(res.data.data || []); })
+            .catch((error) => { if (!cancelled) console.error("Error al cargar libros:", error); })
+            .finally(() => { if (!cancelled) setCargando(false); });
+        return () => { cancelled = true; };
     }, []);
-
-    const cargarLibros = async () => {
-        setCargando(true);
-        try {
-            const res = await api.get("/libros");
-            setLibros(res.data.data || []);
-        } catch (error) {
-            console.error("Error al cargar libros:", error);
-        } finally {
-            setCargando(false);
-        }
-    };
 
     const filtrados = useMemo(() => {
         if (!search.trim()) return libros;

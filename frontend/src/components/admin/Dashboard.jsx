@@ -12,7 +12,7 @@ import {
     X,
     Folder,
 } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/useAuth";
 import api from "../../api/axios";
 
 const esVencido = (p) => {
@@ -33,7 +33,6 @@ export default function AdminDashboard() {
     const [totalLibros, setTotalLibros] = useState(0);
     const [totalEjemplares, setTotalEjemplares] = useState(0);
     const [prestamosActivos, setPrestamosActivos] = useState(0);
-    const [prestamosVencidos, setPrestamosVencidos] = useState(0);
     const [actividadReciente, setActividadReciente] = useState([]);
     const [categorias, setCategorias] = useState([]);
 
@@ -51,7 +50,6 @@ export default function AdminDashboard() {
         dewey: "",
         inventario: "",
     });
-    const [notifOpen, setNotifOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     // Cargar datos del dashboard
@@ -75,7 +73,6 @@ export default function AdminDashboard() {
                 const activos = prestamos.filter(
                     (p) => p.estatus_prestamo === "Activo",
                 ).length;
-                const vencidos = prestamos.filter(esVencido).length;
 
                 // Actividad reciente (últimos 5 préstamos)
                 const recent = prestamos
@@ -99,7 +96,6 @@ export default function AdminDashboard() {
                 setTotalLibros(totalLibrosCount);
                 setTotalEjemplares(totalEjemplaresCount);
                 setPrestamosActivos(activos);
-                setPrestamosVencidos(vencidos);
                 setActividadReciente(recent);
             } catch (error) {
                 console.error("Error al cargar dashboard:", error);
@@ -142,7 +138,6 @@ export default function AdminDashboard() {
             const activos = prestamos.filter(
                 (p) => p.estatus_prestamo === "Activo",
             ).length;
-            const vencidos = prestamos.filter(esVencido).length;
 
             const recent = prestamos
                 .sort((a, b) => new Date(b.fecha_salida) - new Date(a.fecha_salida))
@@ -159,7 +154,6 @@ export default function AdminDashboard() {
                 }));
 
             setPrestamosActivos(activos);
-            setPrestamosVencidos(vencidos);
             setActividadReciente(recent);
             setShowLoanModal(false);
             setLoanForm({
@@ -239,8 +233,6 @@ export default function AdminDashboard() {
             </div>
         );
     }
-
-    const notReturnedCount = prestamosVencidos + prestamosActivos;
 
     return (
         <>

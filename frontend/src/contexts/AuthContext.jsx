@@ -1,7 +1,6 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { login as apiLogin, getPerfil } from '../api/auth';
-
-const AuthContext = createContext();
+import AuthContext from './AuthContextDef';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -49,7 +48,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             return {
                 success: false,
-                message: error.response?.data?.message || 'Error al iniciar sesión'
+                message: error.response?.data?.message || 'Error al iniciar sesion'
             };
         }
     };
@@ -65,12 +64,4 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
-};
-
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth debe usarse dentro de un AuthProvider');
-    }
-    return context;
 };

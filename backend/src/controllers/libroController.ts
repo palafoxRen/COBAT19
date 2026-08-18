@@ -141,22 +141,28 @@ export const registrarLibro = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// ACTUALIZAR LIBRO
+// ACTUALIZAR LIBRO (whitelist de campos permitidos)
+const ALLOWED_UPDATE_FIELDS = ['titulo', 'autor', 'editorial', 'dewey', 'isbn', 'categoria_id'];
+
 export const actualizarLibro = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
   const updates = req.body;
-  if (Object.keys(updates).length === 0) {
-    return res.status(400).json({ success: false, message: 'No se enviaron campos para actualizar' });
+
+  const allowedUpdates: Record<string, any> = {};
+  for (const key of ALLOWED_UPDATE_FIELDS) {
+    if (key in updates) {
+      allowedUpdates[key] = updates[key];
+    }
   }
 
-  // No permitir actualizar id_libro ni fecha_registro
-  delete updates.id_libro;
-  delete updates.fecha_registro;
+  if (Object.keys(allowedUpdates).length === 0) {
+    return res.status(400).json({ success: false, message: 'No se enviaron campos validos para actualizar' });
+  }
 
   const fields: string[] = [];
   const values: any[] = [];
   let paramIndex = 1;
-  for (const [key, value] of Object.entries(updates)) {
+  for (const [key, value] of Object.entries(allowedUpdates)) {
     fields.push(`${key} = $${paramIndex}`);
     values.push(value);
     paramIndex++;

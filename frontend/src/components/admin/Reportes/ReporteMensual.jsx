@@ -26,17 +26,15 @@ const formatoFecha = (fecha) =>
 export default function ReporteMensual() {
     const [anio, setAnio] = useState(hoy.getFullYear());
     const [mes, setMes] = useState(hoy.getMonth() + 1);
-    const [cargando, setCargando] = useState(false);
+    const [cargando, setCargando] = useState(true);
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState("");
 
     useEffect(() => {
         let active = true;
-        setCargando(true);
-        setError("");
         getReporteMensual(anio, mes)
             .then((res) => {
-                if (active) setDatos(res.data);
+                if (active) { setError(""); setDatos(res.data); }
             })
             .catch((err) => {
                 if (active) setError(err.response?.data?.message || "Error al cargar el reporte.");

@@ -34,7 +34,7 @@ const initialsFrom = (text) => {
 
 export default function GestionPrestamos() {
     const [prestamos, setPrestamos] = useState([]);
-    const [cargando, setCargando] = useState(false);
+    const [cargando, setCargando] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState("Todos");
     const [search, setSearch] = useState("");
@@ -47,21 +47,26 @@ export default function GestionPrestamos() {
         dueDate: "",
     });
 
-    useEffect(() => {
-        cargarPrestamos();
-    }, []);
-
     const cargarPrestamos = async () => {
         setCargando(true);
         try {
             const res = await api.get("/prestamos");
             setPrestamos(res.data.data || []);
-        } catch (error) {
-            console.error("Error al cargar préstamos:", error);
+        } catch {
+            console.error("Error al cargar prestamos");
         } finally {
             setCargando(false);
         }
     };
+
+    useEffect(() => {
+        let cancelled = false;
+        api.get("/prestamos")
+            .then((res) => { if (!cancelled) setPrestamos(res.data.data || []); })
+            .catch(() => { if (!cancelled) console.error("Error al cargar prestamos"); })
+            .finally(() => { if (!cancelled) setCargando(false); });
+        return () => { cancelled = true; };
+    }, []);
 
     // Convierte un registro del backend al formato que necesita la tabla,
     // y excluye los ya devueltos (esta vista es para dar seguimiento a los pendientes).
@@ -142,7 +147,7 @@ export default function GestionPrestamos() {
         try {
             await api.put(`/prestamos/${prestamoId}/devolver`, {});
             cargarPrestamos();
-        } catch (error) {
+        } catch {
             alert("Error al devolver el libro");
         }
     };
