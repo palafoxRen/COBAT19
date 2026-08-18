@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Upload, BookOpen, FileText } from "lucide-react";
+import { ArrowLeft, Upload, BookOpen, FileText, X, ShieldCheck } from "lucide-react";
 import { uploadDigital } from "../../../api/digitales";
 import api from "../../../api/axios";
 
@@ -10,9 +10,11 @@ export default function SubirPDF() {
     const [idLibro, setIdLibro] = useState("");
     const [archivo, setArchivo] = useState(null);
     const [libros, setLibros] = useState([]);
-    const [cargando, setCargando] = useState(false);
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState("");
+    const [showLicenseModal, setShowLicenseModal] = useState(false);
+    const [licenseType, setLicenseType] = useState("");
+    const [licenseAccepted, setLicenseAccepted] = useState(false);
 
     useEffect(() => {
         api.get("/libros")
@@ -41,12 +43,20 @@ export default function SubirPDF() {
             return;
         }
 
+        setShowLicenseModal(true);
+    };
+
+    const handleConfirmUpload = async () => {
+        if (!licenseType || !licenseAccepted) return;
+
+        setShowLicenseModal(false);
         setEnviando(true);
         try {
             const formData = new FormData();
             formData.append("titulo_digital", titulo.trim());
             if (idLibro) formData.append("id_libro", idLibro);
             formData.append("pdf", archivo);
+            formData.append("licencia_tipo", licenseType);
 
             await uploadDigital(formData);
             navigate("/admin/digitales");
@@ -230,6 +240,171 @@ export default function SubirPDF() {
                     {enviando ? "Subiendo..." : "Subir PDF"}
                 </button>
             </form>
+
+            {showLicenseModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.45)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 50,
+                    }}
+                    onClick={() => {
+                        setShowLicenseModal(false);
+                        setLicenseType("");
+                        setLicenseAccepted(false);
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: "#fff",
+                            borderRadius: 14,
+                            padding: 28,
+                            width: 420,
+                            maxWidth: "90%",
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                        }}
+                    >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 10,
+                                    background: "#f5e0e3",
+                                    color: "#7a2333",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}>
+                                    <ShieldCheck size={18} />
+                                </div>
+                                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
+                                    Verificación de licencia
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowLicenseModal(false);
+                                    setLicenseType("");
+                                    setLicenseAccepted(false);
+                                }}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                            >
+                                <X size={18} color="#737373" />
+                            </button>
+                        </div>
+
+                        <p style={{ margin: "0 0 18px", fontSize: 13.5, color: "#525252", lineHeight: 1.5 }}>
+                            Antes de subir el archivo <strong>{archivo?.name}</strong>, confirma que el documento cumple con una de las siguientes condiciones:
+                        </p>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
+                            {[
+                                { value: "dominio_publico", label: "Dominio público", desc: "La obra no tiene restricciones de derechos de autor." },
+                                { value: "licencia_libre", label: "Licencia libre", desc: "Cuenta con licencia Creative Commons u otra licencia abierta." },
+                                { value: "autoria_institucional", label: "Autoría institucional", desc: "Fue creado por personal de la institución educativa." },
+                            ].map((opt) => (
+                                <label
+                                    key={opt.value}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: 10,
+                                        padding: "10px 12px",
+                                        borderRadius: 8,
+                                        border: licenseType === opt.value ? "1.5px solid #7a2333" : "1px solid #e5e5e5",
+                                        background: licenseType === opt.value ? "#fdf2f3" : "#fafafa",
+                                        cursor: "pointer",
+                                        transition: "all 0.15s",
+                                    }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="licenseType"
+                                        value={opt.value}
+                                        checked={licenseType === opt.value}
+                                        onChange={() => setLicenseType(opt.value)}
+                                        style={{ marginTop: 2, accentColor: "#7a2333" }}
+                                    />
+                                    <div>
+                                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "#171717" }}>
+                                            {opt.label}
+                                        </span>
+                                        <p style={{ margin: 0, fontSize: 12, color: "#737373", marginTop: 2 }}>
+                                            {opt.desc}
+                                        </p>
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
+
+                        <label
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: 8,
+                                marginBottom: 20,
+                                cursor: "pointer",
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={licenseAccepted}
+                                onChange={(e) => setLicenseAccepted(e.target.checked)}
+                                style={{ marginTop: 2, accentColor: "#7a2333" }}
+                            />
+                            <span style={{ fontSize: 13, color: "#525252", lineHeight: 1.45 }}>
+                                Acepto que soy responsable de verificar que el archivo cumple con la condición seleccionada y que no infringe derechos de autor de terceros.
+                            </span>
+                        </label>
+
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button
+                                onClick={() => {
+                                    setShowLicenseModal(false);
+                                    setLicenseType("");
+                                    setLicenseAccepted(false);
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: "11px 0",
+                                    borderRadius: 10,
+                                    border: "1px solid #e0e0e0",
+                                    background: "#fff",
+                                    fontSize: 13.5,
+                                    fontWeight: 600,
+                                    color: "#525252",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmUpload}
+                                disabled={!licenseType || !licenseAccepted}
+                                style={{
+                                    flex: 1,
+                                    padding: "11px 0",
+                                    borderRadius: 10,
+                                    border: "none",
+                                    background: (!licenseType || !licenseAccepted) ? "#d4a0a8" : "#7a2333",
+                                    color: "#fff",
+                                    fontSize: 13.5,
+                                    fontWeight: 700,
+                                    cursor: (!licenseType || !licenseAccepted) ? "not-allowed" : "pointer",
+                                }}
+                            >
+                                Confirmar y subir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

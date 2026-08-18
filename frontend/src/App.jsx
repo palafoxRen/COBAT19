@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import AdminLayout from './pages/AdminLayout';
 import CatalogoPublico from './components/public/CatalogoPublico';
+import Buscador from './components/public/Buscador';
 import Dashboard from './components/admin/Dashboard';
 import GestionPrestamos from './components/admin/Prestamos/GestionPrestamos';
 import RegistrarPrestamo from './components/admin/Prestamos/RegistrarPrestamo';
@@ -38,6 +39,7 @@ const AppRoutes = () => {
                 element={user ? <Navigate to="/admin" replace /> : <Login />}
             />
             <Route path="/" element={<CatalogoPublico />} />
+            <Route path="/catalogo" element={<Buscador />} />
             <Route path="/admin" element={<ProtectedRoute />}>
                 <Route index element={<Dashboard />} />
                 <Route path="prestamos" element={<GestionPrestamos />} />

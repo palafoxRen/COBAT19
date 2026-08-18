@@ -13,43 +13,47 @@ import {
     Languages,
     Music,
     Dna,
-    ArrowRight,
 } from "lucide-react";
 import api from "../../api/axios";
 
-// Mantenemos las categorías con íconos fijos (solo para mostrar los botones)
-const CATEGORIES = [
-    { id: "literatura", name: "Literatura", icon: BookOpen, bg: "#f5e0e3" },
-    { id: "ciencia", name: "Ciencia", icon: FlaskConical, bg: "#f7e6e8" },
-    { id: "historia", name: "Historia", icon: History, bg: "#ffffff" },
-    { id: "matematicas", name: "Matemáticas", icon: Calculator, bg: "#ffffff" },
-    { id: "geografia", name: "Geografía", icon: Globe, bg: "#ffffff" },
-    { id: "idiomas", name: "Idiomas", icon: Languages, bg: "#f5e0e3" },
-    { id: "arte", name: "Arte y música", icon: Music, bg: "#f7e6e8" },
-    { id: "biologia", name: "Biología", icon: Dna, bg: "#ffffff" },
-];
+const ICON_MAP = {
+    literatura: BookOpen,
+    ciencia: FlaskConical,
+    historia: History,
+    matemáticas: Calculator,
+    geografía: Globe,
+    idiomas: Languages,
+    "arte y música": Music,
+    arte: Music,
+    biología: Dna,
+};
+
+const BGS = ["#f5e0e3", "#f7e6e8", "#ffffff", "#ffffff", "#ffffff", "#f5e0e3", "#f7e6e8", "#ffffff"];
 
 export default function CatalogoPublico() {
     const navigate = useNavigate();
     const [books, setBooks] = useState([]);
+    const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [query, setQuery] = useState("");
     const [submittedQuery, setSubmittedQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState(null);
 
-    // Cargar libros desde la API
     useEffect(() => {
-        const fetchBooks = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await api.get("/libros");
-                // Asegurar que cada libro tenga un campo 'categoria' (si no, asignar null)
-                const librosConCategoria = (response.data.data || []).map(libro => ({
+                const [booksRes, catsRes] = await Promise.all([
+                    api.get("/libros"),
+                    api.get("/categorias"),
+                ]);
+                const librosConCategoria = (booksRes.data.data || []).map(libro => ({
                     ...libro,
                     categoria: libro.categoria || null,
                 }));
                 setBooks(librosConCategoria);
+                setCategorias(catsRes.data.data || []);
                 setError(null);
             } catch (err) {
                 console.error("Error al cargar catálogo:", err);
@@ -58,7 +62,7 @@ export default function CatalogoPublico() {
                 setLoading(false);
             }
         };
-        fetchBooks();
+        fetchData();
     }, []);
 
     // Filtrar libros localmente (sin recargar)
@@ -77,14 +81,14 @@ export default function CatalogoPublico() {
 
         // Filtro por categoría
         if (selectedCategory) {
-            const catName = CATEGORIES.find(c => c.id === selectedCategory)?.name;
-            if (catName) {
-                result = result.filter(b => b.categoria === catName);
+            const cat = categorias.find(c => c.categoria_id === selectedCategory);
+            if (cat) {
+                result = result.filter(b => b.categoria === cat.nombre);
             }
         }
 
         return result;
-    }, [books, submittedQuery, selectedCategory]);
+    }, [books, submittedQuery, selectedCategory, categorias]);
 
     // Estadísticas reales
     const totalEjemplares = books.reduce((acc, b) => acc + (b.total_ejemplares || 0), 0);
@@ -186,7 +190,14 @@ export default function CatalogoPublico() {
                     <a href="#top" style={{ color: "#404040", textDecoration: "none" }}>
                         Inicio
                     </a>
-                    <a href="#novedades" style={{ color: "#404040", textDecoration: "none" }}>
+                    <a
+                        href="#novedades"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            navigate("/catalogo");
+                        }}
+                        style={{ color: "#404040", textDecoration: "none", cursor: "pointer" }}
+                    >
                         Catálogo
                     </a>
                 </nav>
@@ -373,17 +384,17 @@ export default function CatalogoPublico() {
                         gap: 20,
                     }}
                 >
-                    {CATEGORIES.map((cat) => {
-                        const Icon = cat.icon;
-                        const isSelected = selectedCategory === cat.id;
+                    {categorias.map((cat, idx) => {
+                        const Icon = ICON_MAP[cat.nombre?.toLowerCase()] || BookOpen;
+                        const isSelected = selectedCategory === cat.categoria_id;
                         return (
                             <button
-                                key={cat.id}
-                                onClick={() => handleCategoryClick(cat)}
+                                key={cat.categoria_id}
+                                onClick={() => handleCategoryClick({ id: cat.categoria_id })}
                                 style={{
                                     textAlign: "left",
                                     border: isSelected ? "2px solid #7a2333" : "1px solid #ececec",
-                                    background: cat.bg,
+                                    background: BGS[idx % BGS.length],
                                     borderRadius: 14,
                                     padding: "22px 20px",
                                     cursor: "pointer",
@@ -409,10 +420,10 @@ export default function CatalogoPublico() {
                                     <Icon size={19} color="#404040" />
                                 </div>
                                 <p style={{ margin: "0 0 3px", fontWeight: 700, fontSize: 15.5 }}>
-                                    {cat.name}
+                                    {cat.nombre}
                                 </p>
                                 <p style={{ margin: 0, fontSize: 13, color: "#737373" }}>
-                                    {books.filter(b => b.categoria === cat.name).length} Libros
+                                    {cat.total_libros || 0} Libros
                                 </p>
                             </button>
                         );
@@ -422,7 +433,7 @@ export default function CatalogoPublico() {
                 {selectedCategory && (
                     <p style={{ marginTop: 18, fontSize: 13.5, color: "#7a2333" }}>
                         Mostrando interés en:{" "}
-                        <strong>{CATEGORIES.find((c) => c.id === selectedCategory)?.name}</strong>
+                        <strong>{categorias.find((c) => c.categoria_id === selectedCategory)?.nombre}</strong>
                         {" — "}
                         <button
                             onClick={() => setSelectedCategory(null)}
@@ -473,11 +484,7 @@ export default function CatalogoPublico() {
                         </p>
                     </div>
                     <button
-                        onClick={() => {
-                            setQuery("");
-                            setSubmittedQuery("");
-                            setSelectedCategory(null);
-                        }}
+                        onClick={() => navigate("/catalogo")}
                         style={{
                             border: "1px solid #e0e0e0",
                             background: "#fff",
@@ -689,7 +696,14 @@ export default function CatalogoPublico() {
                             <a href="#top" style={{ color: "#404040", textDecoration: "none" }}>
                                 Inicio
                             </a>
-                            <a href="#novedades" style={{ color: "#404040", textDecoration: "none" }}>
+                            <a
+                                href="#novedades"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    navigate("/catalogo");
+                                }}
+                                style={{ color: "#404040", textDecoration: "none", cursor: "pointer" }}
+                            >
                                 Catálogo
                             </a>
                             <button

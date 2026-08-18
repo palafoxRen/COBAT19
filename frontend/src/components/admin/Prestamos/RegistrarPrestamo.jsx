@@ -87,15 +87,26 @@ const RegistrarPrestamo = () => {
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Tipo de usuario</Form.Label>
-                                    <Form.Select
-                                        name="tipo_usuario"
-                                        value={formData.tipo_usuario}
-                                        onChange={handleChange}
-                                        required
-                                    >
-                                        <option value="Alumno">Alumno</option>
-                                        <option value="Docente">Docente</option>
-                                    </Form.Select>
+                                    <div className="d-flex gap-3 mt-1">
+                                        <Form.Check
+                                            type="radio"
+                                            id="tipo-alumno"
+                                            name="tipo_usuario"
+                                            label="Alumno"
+                                            value="Alumno"
+                                            checked={formData.tipo_usuario === 'Alumno'}
+                                            onChange={handleChange}
+                                        />
+                                        <Form.Check
+                                            type="radio"
+                                            id="tipo-docente"
+                                            name="tipo_usuario"
+                                            label="Docente"
+                                            value="Docente"
+                                            checked={formData.tipo_usuario === 'Docente'}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
                                 </Form.Group>
                             </Col>
                         </Row>
