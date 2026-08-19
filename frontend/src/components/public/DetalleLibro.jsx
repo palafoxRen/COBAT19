@@ -115,9 +115,23 @@ export default function DetalleLibro() {
                 <div style={{ display: "grid", gridTemplateColumns: "260px 1fr 320px", gap: 32 }}>
                     {/* Portada */}
                     <div>
-                        <div style={{ width: "100%", aspectRatio: "3/4.4", borderRadius: 14, background: "#f5e0e3", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
-                            <BookOpen size={48} color="#7a2333" />
-                        </div>
+                        {libro.imagen_url ? (
+                            <img
+                                src={libro.imagen_url}
+                                alt={libro.titulo}
+                                style={{
+                                    width: "100%",
+                                    aspectRatio: "3/4.4",
+                                    objectFit: "cover",
+                                    borderRadius: 14,
+                                    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                                }}
+                            />
+                        ) : (
+                            <div style={{ width: "100%", aspectRatio: "3/4.4", borderRadius: 14, background: "#f5e0e3", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
+                                <BookOpen size={48} color="#7a2333" />
+                            </div>
+                        )}
                     </div>
 
                     {/* Info central */}
@@ -138,6 +152,18 @@ export default function DetalleLibro() {
                         </div>
 
                         <hr style={{ border: "none", borderTop: "1px solid #ececec", margin: "28px 0" }} />
+
+                        {libro.sinopsis && (
+                            <>
+                                <h2 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 19, fontWeight: 700, margin: "0 0 14px" }}>
+                                    <BookOpenCheck size={19} color="#7a2333" />
+                                    Sinopsis
+                                </h2>
+                                <p style={{ fontSize: 14.5, color: "#404040", lineHeight: 1.75, margin: "0 0 28px" }}>
+                                    {libro.sinopsis}
+                                </p>
+                            </>
+                        )}
 
                         <h2 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 19, fontWeight: 700, margin: "0 0 14px" }}>
                             <BookOpenCheck size={19} color="#7a2333" />

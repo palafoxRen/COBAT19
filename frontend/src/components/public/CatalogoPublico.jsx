@@ -527,9 +527,9 @@ export default function CatalogoPublico() {
                                         background: "#f2f2f2",
                                     }}
                                 >
-                                    {book.imagen ? (
+                                    {book.imagen_url ? (
                                         <img
-                                            src={book.imagen}
+                                            src={book.imagen_url}
                                             alt={book.titulo}
                                             style={{
                                                 width: "100%",

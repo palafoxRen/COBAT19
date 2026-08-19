@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     BookOpen,
@@ -8,14 +8,19 @@ import {
     Barcode,
     ArrowLeft,
     Folder,
+    ImageIcon,
+    X,
 } from "lucide-react";
 import api from "../../../api/axios";
 
 export default function FormularioLibro() {
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
     const [submitting, setSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
     const [categorias, setCategorias] = useState([]);
+    const [imagenPreview, setImagenPreview] = useState(null);
+    const [imagenFile, setImagenFile] = useState(null);
 
     const [form, setForm] = useState({
         titulo: "",
@@ -25,6 +30,7 @@ export default function FormularioLibro() {
         isbn: "",
         libro_inventario: "",
         categoria_id: "",
+        sinopsis: "",
     });
 
     useEffect(() => {
@@ -33,14 +39,34 @@ export default function FormularioLibro() {
             .then((res) => {
                 if (active) setCategorias(res.data.data || []);
             })
-            .catch((error) => console.error("Error al cargar categorías:", error));
-        return () => {
-            active = false;
-        };
+            .catch(() => {});
+        return () => { active = false; };
     }, []);
 
     const handleChange = (field) => (e) =>
         setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            setErrorMsg("Solo se permiten archivos de imagen.");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setErrorMsg("La imagen no debe superar 5 MB.");
+            return;
+        }
+        setImagenFile(file);
+        setImagenPreview(URL.createObjectURL(file));
+        setErrorMsg("");
+    };
+
+    const handleRemoveImage = () => {
+        setImagenFile(null);
+        setImagenPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -60,7 +86,17 @@ export default function FormularioLibro() {
 
         setSubmitting(true);
         try {
-            await api.post("/libros", form);
+            const res = await api.post("/libros", form);
+            const nuevoId = res.data.data?.id_libro;
+
+            if (imagenFile && nuevoId) {
+                const fd = new FormData();
+                fd.append("imagen", imagenFile);
+                await api.post(`/libros/${nuevoId}/imagen`, fd, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+            }
+
             alert("Libro registrado correctamente.");
             navigate("/admin/libros");
         } catch (error) {
@@ -70,6 +106,17 @@ export default function FormularioLibro() {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const inputBase = {
+        width: "100%",
+        boxSizing: "border-box",
+        borderRadius: 10,
+        border: "1px solid #e0e0e0",
+        fontSize: 14,
+        outline: "none",
+        color: "#171717",
+        background: "#fff",
     };
 
     return (
@@ -106,10 +153,84 @@ export default function FormularioLibro() {
                     border: "1px solid #ececec",
                     borderRadius: 14,
                     padding: 28,
-                    maxWidth: 520,
+                    maxWidth: 600,
                 }}
             >
                 <form onSubmit={handleSubmit}>
+                    {/* Imagen de portada */}
+                    <FieldLabel>Portada (opcional)</FieldLabel>
+                    <div style={{ marginBottom: 16 }}>
+                        {imagenPreview ? (
+                            <div style={{ position: "relative", display: "inline-block" }}>
+                                <img
+                                    src={imagenPreview}
+                                    alt="Vista previa"
+                                    style={{
+                                        width: 140,
+                                        height: 190,
+                                        objectFit: "cover",
+                                        borderRadius: 10,
+                                        border: "1px solid #e0e0e0",
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveImage}
+                                    style={{
+                                        position: "absolute",
+                                        top: -8,
+                                        right: -8,
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: "50%",
+                                        background: "#dc2626",
+                                        color: "#fff",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{
+                                    width: 140,
+                                    height: 190,
+                                    borderRadius: 10,
+                                    border: "2px dashed #d0d0d0",
+                                    background: "#fafafa",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 8,
+                                    color: "#a3a3a3",
+                                    fontSize: 12,
+                                }}
+                            >
+                                <ImageIcon size={28} />
+                                Seleccionar imagen
+                            </button>
+                        )}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleImageSelect}
+                            style={{ display: "none" }}
+                        />
+                        <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "#a3a3a3" }}>
+                            JPG, PNG o WebP. Máximo 5 MB.
+                        </p>
+                    </div>
+
                     <FieldLabel>Título</FieldLabel>
                     <IconInput
                         icon={BookOpen}
@@ -134,6 +255,23 @@ export default function FormularioLibro() {
                         onChange={handleChange("editorial")}
                     />
 
+                    <FieldLabel>Sinopsis (opcional)</FieldLabel>
+                    <textarea
+                        value={form.sinopsis}
+                        onChange={handleChange("sinopsis")}
+                        placeholder="Breve descripción del libro..."
+                        rows={4}
+                        style={{
+                            ...inputBase,
+                            padding: "10px 12px",
+                            marginBottom: 16,
+                            resize: "vertical",
+                            fontFamily: "inherit",
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = "#7a2333")}
+                        onBlur={(e) => (e.target.style.borderColor = "#e0e0e0")}
+                    />
+
                     <FieldLabel>Categoría (opcional)</FieldLabel>
                     <div style={{ position: "relative", marginBottom: 16 }}>
                         <Folder
@@ -150,15 +288,9 @@ export default function FormularioLibro() {
                             value={form.categoria_id}
                             onChange={handleChange("categoria_id")}
                             style={{
-                                width: "100%",
-                                boxSizing: "border-box",
+                                ...inputBase,
                                 padding: "11px 12px 11px 36px",
-                                borderRadius: 10,
-                                border: "1px solid #e0e0e0",
-                                fontSize: 14,
-                                outline: "none",
                                 color: form.categoria_id ? "#171717" : "#9ca3af",
-                                background: "#fff",
                                 appearance: "none",
                             }}
                         >

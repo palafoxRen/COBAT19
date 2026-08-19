@@ -3,7 +3,7 @@ import path from 'path';
 
 const storage = multer.memoryStorage();
 
-const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const pdfFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const ext = path.extname(file.originalname).toLocaleLowerCase();
     if (ext !== '.pdf') {
         return cb(new Error('Solo se permiten archivos PDF'));
@@ -14,5 +14,20 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 export const uploadPDF = multer({
     storage,
     limits: { fileSize: 20 * 1024 * 1024 },
-    fileFilter,
+    fileFilter: pdfFilter,
+});
+
+const imageFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ext = path.extname(file.originalname).toLocaleLowerCase();
+    if (!allowed.includes(ext)) {
+        return cb(new Error('Solo se permiten imágenes (JPG, PNG, WebP)'));
+    }
+    cb(null, true);
+};
+
+export const uploadImage = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: imageFilter,
 });

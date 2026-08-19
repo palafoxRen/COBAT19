@@ -610,9 +610,9 @@ function BookCard({ book }) {
                     background: "#f2f2f2",
                 }}
             >
-                {book.imagen ? (
+                {book.imagen_url ? (
                     <img
-                        src={book.imagen}
+                        src={book.imagen_url}
                         alt={book.titulo}
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     />
@@ -696,9 +696,9 @@ function BookRow({ book }) {
             }}
             onClick={() => navigate(`/libros/${book.id_libro}`)}
         >
-            {book.imagen ? (
+            {book.imagen_url ? (
                 <img
-                    src={book.imagen}
+                    src={book.imagen_url}
                     alt={book.titulo}
                     style={{ width: 56, height: 74, objectFit: "cover", borderRadius: 8, flexShrink: 0 }}
                 />

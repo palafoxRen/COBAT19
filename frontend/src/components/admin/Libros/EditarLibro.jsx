@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
     BookOpen,
@@ -8,17 +8,22 @@ import {
     Barcode,
     ArrowLeft,
     Folder,
+    ImageIcon,
+    X,
 } from "lucide-react";
 import api from "../../../api/axios";
 
 export default function EditarLibro() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
     const [cargando, setCargando] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
     const [ejemplares, setEjemplares] = useState([]);
     const [categorias, setCategorias] = useState([]);
+    const [imagenPreview, setImagenPreview] = useState(null);
+    const [imagenFile, setImagenFile] = useState(null);
 
     const [form, setForm] = useState({
         titulo: "",
@@ -27,6 +32,8 @@ export default function EditarLibro() {
         dewey: "",
         isbn: "",
         categoria_id: "",
+        sinopsis: "",
+        imagen_url: "",
     });
 
     useEffect(() => {
@@ -48,7 +55,12 @@ export default function EditarLibro() {
                     dewey: libro.dewey || "",
                     isbn: libro.isbn || "",
                     categoria_id: libro.categoria_id || "",
+                    sinopsis: libro.sinopsis || "",
+                    imagen_url: libro.imagen_url || "",
                 });
+                if (libro.imagen_url) {
+                    setImagenPreview(libro.imagen_url);
+                }
                 setEjemplares(libro.ejemplares || []);
             } catch {
                 if (active) setErrorMsg("No se pudo cargar la información del libro.");
@@ -58,13 +70,33 @@ export default function EditarLibro() {
         };
 
         cargarTodo();
-        return () => {
-            active = false;
-        };
+        return () => { active = false; };
     }, [id]);
 
     const handleChange = (field) => (e) =>
         setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            setErrorMsg("Solo se permiten archivos de imagen.");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setErrorMsg("La imagen no debe superar 5 MB.");
+            return;
+        }
+        setImagenFile(file);
+        setImagenPreview(URL.createObjectURL(file));
+        setErrorMsg("");
+    };
+
+    const handleRemoveImage = () => {
+        setImagenFile(null);
+        setImagenPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -77,7 +109,25 @@ export default function EditarLibro() {
 
         setSubmitting(true);
         try {
-            await api.put(`/libros/${id}`, form);
+            const payload = {
+                titulo: form.titulo,
+                autor: form.autor,
+                editorial: form.editorial || null,
+                dewey: form.dewey,
+                isbn: form.isbn || null,
+                categoria_id: form.categoria_id || null,
+                sinopsis: form.sinopsis || null,
+            };
+            await api.put(`/libros/${id}`, payload);
+
+            if (imagenFile) {
+                const fd = new FormData();
+                fd.append("imagen", imagenFile);
+                await api.post(`/libros/${id}/imagen`, fd, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+            }
+
             alert("Libro actualizado correctamente.");
             navigate("/admin/libros");
         } catch (error) {
@@ -92,6 +142,17 @@ export default function EditarLibro() {
     if (cargando) {
         return <p style={{ color: "#737373", fontSize: 14 }}>Cargando libro...</p>;
     }
+
+    const inputBase = {
+        width: "100%",
+        boxSizing: "border-box",
+        borderRadius: 10,
+        border: "1px solid #e0e0e0",
+        fontSize: 14,
+        outline: "none",
+        color: "#171717",
+        background: "#fff",
+    };
 
     return (
         <>
@@ -139,6 +200,77 @@ export default function EditarLibro() {
                     }}
                 >
                     <form onSubmit={handleSubmit}>
+                        {/* Imagen de portada */}
+                        <FieldLabel>Portada</FieldLabel>
+                        <div style={{ marginBottom: 16 }}>
+                            {imagenPreview ? (
+                                <div style={{ position: "relative", display: "inline-block" }}>
+                                    <img
+                                        src={imagenPreview}
+                                        alt="Portada"
+                                        style={{
+                                            width: 120,
+                                            height: 165,
+                                            objectFit: "cover",
+                                            borderRadius: 10,
+                                            border: "1px solid #e0e0e0",
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        style={{
+                                            position: "absolute",
+                                            top: -8,
+                                            right: -8,
+                                            width: 24,
+                                            height: 24,
+                                            borderRadius: "50%",
+                                            background: "#dc2626",
+                                            color: "#fff",
+                                            border: "none",
+                                            cursor: "pointer",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    style={{
+                                        width: 120,
+                                        height: 165,
+                                        borderRadius: 10,
+                                        border: "2px dashed #d0d0d0",
+                                        background: "#fafafa",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 8,
+                                        color: "#a3a3a3",
+                                        fontSize: 12,
+                                    }}
+                                >
+                                    <ImageIcon size={24} />
+                                    Agregar imagen
+                                </button>
+                            )}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleImageSelect}
+                                style={{ display: "none" }}
+                            />
+                        </div>
+
                         <FieldLabel>Título</FieldLabel>
                         <IconInput
                             icon={BookOpen}
@@ -161,6 +293,23 @@ export default function EditarLibro() {
                             placeholder="Editorial"
                             value={form.editorial}
                             onChange={handleChange("editorial")}
+                        />
+
+                        <FieldLabel>Sinopsis (opcional)</FieldLabel>
+                        <textarea
+                            value={form.sinopsis}
+                            onChange={handleChange("sinopsis")}
+                            placeholder="Breve descripción del libro..."
+                            rows={4}
+                            style={{
+                                ...inputBase,
+                                padding: "10px 12px",
+                                marginBottom: 16,
+                                resize: "vertical",
+                                fontFamily: "inherit",
+                            }}
+                            onFocus={(e) => (e.target.style.borderColor = "#7a2333")}
+                            onBlur={(e) => (e.target.style.borderColor = "#e0e0e0")}
                         />
 
                         <div
@@ -206,15 +355,9 @@ export default function EditarLibro() {
                                 value={form.categoria_id}
                                 onChange={handleChange("categoria_id")}
                                 style={{
-                                    width: "100%",
-                                    boxSizing: "border-box",
+                                    ...inputBase,
                                     padding: "11px 12px 11px 36px",
-                                    borderRadius: 10,
-                                    border: "1px solid #e0e0e0",
-                                    fontSize: 14,
-                                    outline: "none",
                                     color: form.categoria_id ? "#171717" : "#9ca3af",
-                                    background: "#fff",
                                     appearance: "none",
                                 }}
                             >

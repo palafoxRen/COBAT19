@@ -1,5 +1,12 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
+import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs';
+import path from 'path';
+
+const IMAGES_DIR = path.join(__dirname, '../../uploads/images');
+if (!existsSync(IMAGES_DIR)) {
+  mkdirSync(IMAGES_DIR, { recursive: true });
+}
 
 // OBTENER TODOS (con búsqueda avanzada)
 export const obtenerLibros = async (req: Request, res: Response): Promise<Response> => {
@@ -35,7 +42,8 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
   const query = `
     SELECT 
       l.id_libro, l.titulo, l.autor, l.editorial, l.dewey, l.isbn, l.fecha_registro,
-      l.categoria_id, c.nombre AS categoria_nombre,
+      l.categoria_id, l.imagen_url, l.sinopsis,
+      c.nombre AS categoria_nombre,
       COUNT(e.libro_inventario) AS total_ejemplares,
       SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END) AS disponibles
     FROM libros l
@@ -84,7 +92,7 @@ export const obtenerLibroPorId = async (req: Request, res: Response): Promise<Re
 
 // REGISTRAR LIBRO (con primer ejemplar) - Ya lo tienes, pero ajustado
 export const registrarLibro = async (req: Request, res: Response): Promise<void> => {
-  const { titulo, autor, editorial, dewey, isbn, libro_inventario, categoria_id } = req.body;
+  const { titulo, autor, editorial, dewey, isbn, libro_inventario, categoria_id, sinopsis } = req.body;
 
   if (!titulo || !autor || !dewey || !libro_inventario) {
     res.status(400).json({
@@ -99,12 +107,12 @@ export const registrarLibro = async (req: Request, res: Response): Promise<void>
     await client.query('BEGIN');
 
     const insertLibroQuery = `
-      INSERT INTO libros (titulo, autor, editorial, dewey, isbn, categoria_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO libros (titulo, autor, editorial, dewey, isbn, categoria_id, sinopsis)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id_libro;
     `;
     const libroResultado = await client.query(insertLibroQuery, [
-      titulo, autor, editorial || null, dewey, isbn || null, categoria_id || null
+      titulo, autor, editorial || null, dewey, isbn || null, categoria_id || null, sinopsis || null
     ]);
     const idLibroNuevo = libroResultado.rows[0].id_libro;
 
@@ -141,8 +149,44 @@ export const registrarLibro = async (req: Request, res: Response): Promise<void>
   }
 };
 
+// SUBIR IMAGEN DE PORTADA
+export const subirImagenLibro = async (req: Request, res: Response): Promise<Response> => {
+  const { id } = req.params;
+
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No se envió ninguna imagen' });
+  }
+
+  try {
+    const check = await pool.query('SELECT imagen_url FROM libros WHERE id_libro = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Libro no encontrado' });
+    }
+
+    const ext = path.extname(req.file.originalname).toLocaleLowerCase();
+    const nombreArchivo = `libro_${id}_${Date.now()}${ext}`;
+    const rutaFisica = path.join(IMAGES_DIR, nombreArchivo);
+    writeFileSync(rutaFisica, req.file.buffer);
+
+    const imagenUrl = `/uploads/images/${nombreArchivo}`;
+
+    const oldImage = check.rows[0].imagen_url;
+    if (oldImage && oldImage.startsWith('/uploads/images/')) {
+      const oldPath = path.join(__dirname, '../..', oldImage);
+      try { unlinkSync(oldPath); } catch { /* archivo antiguo ya no existe */ }
+    }
+
+    await pool.query('UPDATE libros SET imagen_url = $1 WHERE id_libro = $2', [imagenUrl, id]);
+
+    return res.json({ success: true, data: { imagen_url: imagenUrl } });
+  } catch (error) {
+    console.error('Error al subir imagen:', error);
+    return res.status(500).json({ success: false, message: 'Error al subir la imagen' });
+  }
+};
+
 // ACTUALIZAR LIBRO (whitelist de campos permitidos)
-const ALLOWED_UPDATE_FIELDS = ['titulo', 'autor', 'editorial', 'dewey', 'isbn', 'categoria_id'];
+const ALLOWED_UPDATE_FIELDS = ['titulo', 'autor', 'editorial', 'dewey', 'isbn', 'categoria_id', 'sinopsis', 'imagen_url'];
 
 export const actualizarLibro = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
