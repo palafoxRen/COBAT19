@@ -59,6 +59,7 @@ export default function DetalleDigital() {
     }
 
     const pdfUrl = `${api.defaults.baseURL}/digitales/${digital.digital_id}/descargar`;
+    const pdfDownloadUrl = `${pdfUrl}?download=1`;
     const imagen = digital.imagen_url || digital.libro_imagen_url;
     const sinopsis = digital.sinopsis || digital.libro_sinopsis;
 
@@ -185,7 +186,7 @@ export default function DetalleDigital() {
                                     <Eye size={16} />
                                     {showPdf ? "Ocultar PDF" : "Ver PDF en línea"}
                                 </button>
-                                <a href={pdfUrl} download style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "#fff", color: "#171717", border: "1px solid #e0e0e0", borderRadius: 10, padding: "12px 0", fontSize: 14, fontWeight: 600, cursor: "pointer", textDecoration: "none", marginBottom: 14 }}>
+                                <a href={pdfDownloadUrl} download style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "#fff", color: "#171717", border: "1px solid #e0e0e0", borderRadius: 10, padding: "12px 0", fontSize: 14, fontWeight: 600, cursor: "pointer", textDecoration: "none", marginBottom: 14 }}>
                                     <Download size={15} />
                                     Descargar PDF
                                 </a>

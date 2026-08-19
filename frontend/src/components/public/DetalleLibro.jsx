@@ -72,7 +72,7 @@ export default function DetalleLibro() {
     const handleDownload = () => {
         const digitalId = libro.digital_id;
         if (digitalId) {
-            window.open(`${api.defaults.baseURL}/digitales/${digitalId}/descargar`, "_blank");
+            window.open(`${api.defaults.baseURL}/digitales/${digitalId}/descargar?download=1`, "_blank");
         } else {
             alert("Este libro no tiene versión digital disponible.");
         }

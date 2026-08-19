@@ -202,7 +202,7 @@ export default function ListaPDF() {
                                             <button
                                             onClick={() =>
                                                 window.open(
-                                                    `${API_BASE}/api/digitales/${d.digital_id}/descargar`,
+                                                    `${API_BASE}/api/digitales/${d.digital_id}/descargar?download=1`,
                                                     "_blank",
                                                 )
                                             }

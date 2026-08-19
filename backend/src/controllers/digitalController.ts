@@ -124,7 +124,7 @@ export const descargarDigital = async (req: Request, res: Response): Promise<voi
 
     try {
         const result = await pool.query(
-            "SELECT url_pdf FROM libros_digitales WHERE digital_id = $1",
+            "SELECT url_pdf, titulo_digital FROM libros_digitales WHERE digital_id = $1",
             [digital_id]
         );
         if (result.rows.length === 0) {
@@ -140,7 +140,10 @@ export const descargarDigital = async (req: Request, res: Response): Promise<voi
             return;
         }
 
-        res.download(rutaFisica, nombreArchivo);
+        const disposition = req.query.download === '1' ? 'attachment' : 'inline';
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `${disposition}; filename="${nombreArchivo}"`);
+        res.sendFile(rutaFisica);
     } catch (error) {
         console.error("Error al descargar libro digital:", error);
         res.status(500).json({ success: false, message: "Error al descargar el libro digital" });
