@@ -75,7 +75,8 @@ export default function CatalogoPublico() {
             result = result.filter(
                 (b) =>
                     b.titulo?.toLowerCase().includes(q) ||
-                    b.autor?.toLowerCase().includes(q)
+                    b.autor?.toLowerCase().includes(q) ||
+                    b.titulo_digital?.toLowerCase().includes(q)
             );
         }
 

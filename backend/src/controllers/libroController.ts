@@ -19,7 +19,7 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
   if (q && typeof q === 'string') {
     const searchTerm = `%${q}%`;
     whereClauses.push(
-      `(l.titulo ILIKE $${paramIndex} OR l.autor ILIKE $${paramIndex} OR l.editorial ILIKE $${paramIndex} OR l.dewey ILIKE $${paramIndex} OR l.isbn ILIKE $${paramIndex})`
+      `(l.titulo ILIKE $${paramIndex} OR l.autor ILIKE $${paramIndex} OR l.editorial ILIKE $${paramIndex} OR l.dewey ILIKE $${paramIndex} OR l.isbn ILIKE $${paramIndex} OR EXISTS (SELECT 1 FROM libros_digitales ld WHERE ld.id_libro = l.id_libro AND ld.titulo_digital ILIKE $${paramIndex}))`
     );
     values.push(searchTerm);
     paramIndex++;
@@ -45,10 +45,12 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
       l.categoria_id, l.imagen_url, l.sinopsis,
       c.nombre AS categoria_nombre,
       COUNT(e.libro_inventario)::INTEGER AS total_ejemplares,
-      COALESCE(SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END), 0)::INTEGER AS disponibles
+      COALESCE(SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END), 0)::INTEGER AS disponibles,
+      MIN(d.digital_id) AS digital_id
     FROM libros l
     LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
     LEFT JOIN ejemplares e ON l.id_libro = e.id_libro
+    LEFT JOIN libros_digitales d ON d.id_libro = l.id_libro
     ${whereSQL}
     GROUP BY l.id_libro, c.nombre
     ORDER BY l.titulo ASC
@@ -68,9 +70,11 @@ export const obtenerLibroPorId = async (req: Request, res: Response): Promise<Re
   const { id } = req.params;
   try {
     const libroResult = await pool.query(
-      `SELECT l.*, c.nombre AS categoria_nombre
+      `SELECT l.*, c.nombre AS categoria_nombre,
+              d.digital_id, d.titulo_digital, d.url_pdf, d.esta_habilitado
        FROM libros l
        LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
+       LEFT JOIN libros_digitales d ON d.id_libro = l.id_libro
        WHERE l.id_libro = $1`,
       [id]
     );

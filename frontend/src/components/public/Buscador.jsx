@@ -88,7 +88,8 @@ export default function Buscador() {
                 (b) =>
                     b.titulo?.toLowerCase().includes(q) ||
                     b.autor?.toLowerCase().includes(q) ||
-                    b.categoria_nombre?.toLowerCase().includes(q)
+                    b.categoria_nombre?.toLowerCase().includes(q) ||
+                    b.titulo_digital?.toLowerCase().includes(q)
             );
         }
 
