@@ -25,8 +25,7 @@ export default function ListaLibros() {
                 l.titulo?.toLowerCase().includes(q) ||
                 l.autor?.toLowerCase().includes(q) ||
                 l.dewey?.toLowerCase().includes(q) ||
-                l.isbn?.toLowerCase().includes(q) ||
-                (l.codigos_inventario && l.codigos_inventario.some(cod => cod.toLowerCase().includes(q))),
+                l.isbn?.toLowerCase().includes(q),
         );
     }, [libros, search]);
 
@@ -97,7 +96,7 @@ export default function ListaLibros() {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar por título, autor, dewey, ISBN o inventario..."
+                        placeholder="Buscar por título, autor, dewey o ISBN..."
                         style={{
                             border: "none",
                             outline: "none",
@@ -122,7 +121,6 @@ export default function ListaLibros() {
                                 <th style={{ padding: "8px 10px", fontWeight: 600 }}>Autor</th>
                                 <th style={{ padding: "8px 10px", fontWeight: 600 }}>Categoría</th>
                                 <th style={{ padding: "8px 10px", fontWeight: 600 }}>Dewey</th>
-                                <th style={{ padding: "8px 10px", fontWeight: 600 }}>Inventario</th>
                                 <th style={{ padding: "8px 10px", fontWeight: 600 }}>
                                     Ejemplares
                                 </th>
@@ -138,7 +136,7 @@ export default function ListaLibros() {
                             {cargando && (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={7}
                                         style={{
                                             padding: "24px 10px",
                                             textAlign: "center",
@@ -152,7 +150,7 @@ export default function ListaLibros() {
                             {!cargando && filtrados.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={7}
                                         style={{
                                             padding: "24px 10px",
                                             textAlign: "center",
@@ -220,30 +218,6 @@ export default function ListaLibros() {
                                         </td>
                                         <td style={{ padding: "14px 10px", color: "#525252" }}>
                                             {libro.dewey}
-                                        </td>
-                                        <td style={{ padding: "14px 10px" }}>
-                                            {libro.codigos_inventario && libro.codigos_inventario.length > 0 ? (
-                                                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                                                    {libro.codigos_inventario.map((cod, i) => (
-                                                        <span
-                                                            key={i}
-                                                            style={{
-                                                                display: "inline-block",
-                                                                padding: "2px 8px",
-                                                                borderRadius: 6,
-                                                                fontSize: 11,
-                                                                fontWeight: 600,
-                                                                background: "#fef3c7",
-                                                                color: "#92400e",
-                                                            }}
-                                                        >
-                                                            {cod}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span style={{ color: "#a3a3a3" }}>—</span>
-                                            )}
                                         </td>
                                         <td style={{ padding: "14px 10px", color: "#525252" }}>
                                             {libro.total_ejemplares}
