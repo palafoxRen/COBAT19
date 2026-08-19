@@ -44,8 +44,8 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
       l.id_libro, l.titulo, l.autor, l.editorial, l.dewey, l.isbn, l.fecha_registro,
       l.categoria_id, l.imagen_url, l.sinopsis,
       c.nombre AS categoria_nombre,
-      COUNT(e.libro_inventario) AS total_ejemplares,
-      SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END) AS disponibles
+      COUNT(e.libro_inventario)::INTEGER AS total_ejemplares,
+      COALESCE(SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END), 0)::INTEGER AS disponibles
     FROM libros l
     LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
     LEFT JOIN ejemplares e ON l.id_libro = e.id_libro

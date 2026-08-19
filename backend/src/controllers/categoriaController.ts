@@ -6,7 +6,7 @@ export const obtenerCategorias = async (_req: Request, res: Response): Promise<R
   const query = `
     SELECT
       c.categoria_id, c.nombre, c.descripcion,
-      COUNT(l.id_libro) AS total_libros
+      COUNT(l.id_libro)::INTEGER AS total_libros
     FROM categorias c
     LEFT JOIN libros l ON c.categoria_id = l.categoria_id
     GROUP BY c.categoria_id

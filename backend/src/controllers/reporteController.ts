@@ -14,10 +14,10 @@ export const reporteMensual = async (req: Request, res: Response): Promise<Respo
   try {
     const resumenResult = await pool.query(
       `SELECT
-         COUNT(*) AS total,
-         COUNT(*) FILTER (WHERE estatus_prestamo = 'Activo') AS activos,
-         COUNT(*) FILTER (WHERE estatus_prestamo = 'Devuelto') AS devueltos,
-         COUNT(*) FILTER (WHERE estatus_prestamo = 'Activo' AND fecha_limite < CURRENT_DATE) AS retrasados
+         COUNT(*)::INTEGER AS total,
+         COUNT(*) FILTER (WHERE estatus_prestamo = 'Activo')::INTEGER AS activos,
+         COUNT(*) FILTER (WHERE estatus_prestamo = 'Devuelto')::INTEGER AS devueltos,
+         COUNT(*) FILTER (WHERE estatus_prestamo = 'Activo' AND fecha_limite < CURRENT_DATE)::INTEGER AS retrasados
        FROM prestamos
        WHERE EXTRACT(YEAR FROM fecha_salida) = $1 AND EXTRACT(MONTH FROM fecha_salida) = $2`,
       [anio, mes]
@@ -34,7 +34,7 @@ export const reporteMensual = async (req: Request, res: Response): Promise<Respo
     );
 
     const topResult = await pool.query(
-      `SELECT l.titulo, COUNT(*) AS prestamos
+      `SELECT l.titulo, COUNT(*)::INTEGER AS prestamos
        FROM prestamos p
        JOIN ejemplares e ON p.libro_inventario = e.libro_inventario
        JOIN libros l ON e.id_libro = l.id_libro
