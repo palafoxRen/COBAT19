@@ -12,7 +12,7 @@ import {
     CheckCircle2,
     Clock,
 } from "lucide-react";
-import api from "../../api/axios";
+import api, { getImagenUrl } from "../../api/axios";
 
 const YEAR_RANGES = [
     { label: "2020 - Actualidad", test: (y) => y >= 2020 },
@@ -20,7 +20,7 @@ const YEAR_RANGES = [
     { label: "2000 - 2009", test: (y) => y >= 2000 && y <= 2009 },
     { label: "Pre-2000", test: (y) => y < 2000 },
 ];
-const SORT_OPTIONS = ["Mas nuevo", "Mas antiguo", "Titulo A-Z"];
+const SORT_OPTIONS = ["Más nuevo", "Más antiguo", "Título A-Z"];
 const PAGE_SIZE = 12;
 
 export default function Buscador() {
@@ -32,7 +32,7 @@ export default function Buscador() {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [selectedAvailability, setSelectedAvailability] = useState([]);
     const [selectedYearRanges, setSelectedYearRanges] = useState([]);
-    const [sortBy, setSortBy] = useState("Mas nuevo");
+    const [sortBy, setSortBy] = useState("Más nuevo");
     const [sortOpen, setSortOpen] = useState(false);
     const [viewMode, setViewMode] = useState("grid");
     const [page, setPage] = useState(1);
@@ -115,13 +115,13 @@ export default function Buscador() {
         }
 
         const sorted = [...list].sort((a, b) => {
-            if (sortBy === "Mas nuevo") {
+            if (sortBy === "Más nuevo") {
                 return new Date(b.fecha_registro || 0) - new Date(a.fecha_registro || 0);
             }
-            if (sortBy === "Mas antiguo") {
+            if (sortBy === "Más antiguo") {
                 return new Date(a.fecha_registro || 0) - new Date(b.fecha_registro || 0);
             }
-            if (sortBy === "Titulo A-Z") return (a.titulo || "").localeCompare(b.titulo || "");
+            if (sortBy === "Título A-Z") return (a.titulo || "").localeCompare(b.titulo || "");
             return 0;
         });
 
@@ -198,7 +198,7 @@ export default function Buscador() {
                         >
                             Inicio
                         </a>
-                        <span style={{ color: "#171717", fontWeight: 600 }}>Catalogo</span>
+                        <span style={{ color: "#171717", fontWeight: 600 }}>Catálgo</span>
                     </nav>
                 </div>
 
@@ -226,11 +226,11 @@ export default function Buscador() {
                 }}
             >
                 <h1 style={{ fontSize: 30, fontWeight: 800, margin: "0 0 10px" }}>
-                    Catalogo de libros
+                    Catálogo de libros
                 </h1>
                 <p style={{ margin: 0, fontSize: 14.5, color: "#525252", maxWidth: 640, lineHeight: 1.6 }}>
-                    Explora nuestra amplia coleccion de titulos academicos, literatura y mucho
-                    mas. Encuentra el complemento perfecto para tu estudio.
+                    Explora nuestra amplia coleccion de titulos académicos, literatura y mucho
+                    más. Encuentra el complemento perfecto para tu estudio.
                 </p>
             </section>
 
@@ -242,7 +242,7 @@ export default function Buscador() {
                     </div>
 
                     <FilterGroup
-                        title="Categorias"
+                        title="Categorías"
                         open={openSections.categorias}
                         onToggle={() => toggleSection("categorias")}
                     >
@@ -274,7 +274,7 @@ export default function Buscador() {
                     </FilterGroup>
 
                     <FilterGroup
-                        title="Ano de publicacion"
+                        title="Año de publicación"
                         open={openSections.anio}
                         onToggle={() => toggleSection("anio")}
                         noBorder
@@ -330,7 +330,7 @@ export default function Buscador() {
                                     setSearch(e.target.value);
                                     setPage(1);
                                 }}
-                                placeholder="Busca por titulo, autor, categoria..."
+                                placeholder="Busca por título, autor, categoría..."
                                 style={{ border: "none", outline: "none", fontSize: 14, width: "100%" }}
                             />
                         </div>
@@ -524,13 +524,13 @@ export default function Buscador() {
                     color: "#a3a3a3",
                 }}
             >
-                <span>© 2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.</span>
+                <span>2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.</span>
                 <span style={{ display: "flex", gap: 20 }}>
                     <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#a3a3a3", textDecoration: "none" }}>
-                        Politicas de privacidad
+                        Políticas de privacidad
                     </a>
                     <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#a3a3a3", textDecoration: "none" }}>
-                        Terminos y condiciones
+                        Términos y condiciones
                     </a>
                 </span>
             </footer>
@@ -612,7 +612,7 @@ function BookCard({ book }) {
             >
                 {book.imagen_url ? (
                     <img
-                        src={book.imagen_url}
+                        src={getImagenUrl(book.imagen_url)}
                         alt={book.titulo}
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     />
@@ -698,7 +698,7 @@ function BookRow({ book }) {
         >
             {book.imagen_url ? (
                 <img
-                    src={book.imagen_url}
+                    src={getImagenUrl(book.imagen_url)}
                     alt={book.titulo}
                     style={{ width: 56, height: 74, objectFit: "cover", borderRadius: 8, flexShrink: 0 }}
                 />

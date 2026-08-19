@@ -16,7 +16,7 @@ import {
     Loader2,
     AlertTriangle,
 } from "lucide-react";
-import api from "../../api/axios";
+import api, { getImagenUrl } from "../../api/axios";
 
 export default function DetalleLibro() {
     const { id } = useParams();
@@ -117,7 +117,7 @@ export default function DetalleLibro() {
                     <div>
                         {libro.imagen_url ? (
                             <img
-                                src={libro.imagen_url}
+                                src={getImagenUrl(libro.imagen_url)}
                                 alt={libro.titulo}
                                 style={{
                                     width: "100%",

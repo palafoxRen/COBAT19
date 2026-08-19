@@ -14,7 +14,7 @@ import {
     Music,
     Dna,
 } from "lucide-react";
-import api from "../../api/axios";
+import api, { getImagenUrl } from "../../api/axios";
 
 const ICON_MAP = {
     literatura: BookOpen,
@@ -529,7 +529,7 @@ export default function CatalogoPublico() {
                                 >
                                     {book.imagen_url ? (
                                         <img
-                                            src={book.imagen_url}
+                                            src={getImagenUrl(book.imagen_url)}
                                             alt={book.titulo}
                                             style={{
                                                 width: "100%",

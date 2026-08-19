@@ -11,7 +11,7 @@ import {
     ImageIcon,
     X,
 } from "lucide-react";
-import api from "../../../api/axios";
+import api, { getImagenUrl } from "../../../api/axios";
 
 export default function EditarLibro() {
     const { id } = useParams();
@@ -59,7 +59,7 @@ export default function EditarLibro() {
                     imagen_url: libro.imagen_url || "",
                 });
                 if (libro.imagen_url) {
-                    setImagenPreview(libro.imagen_url);
+                    setImagenPreview(getImagenUrl(libro.imagen_url));
                 }
                 setEjemplares(libro.ejemplares || []);
             } catch {
