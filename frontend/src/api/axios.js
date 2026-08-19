@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http
 export const getImagenUrl = (imagenUrl) => {
     if (!imagenUrl) return null;
     if (imagenUrl.startsWith('http')) return imagenUrl;
-    return `${API_BASE}${imagenUrl}`;
+    return imagenUrl;
 };
 
 const api = axios.create({
