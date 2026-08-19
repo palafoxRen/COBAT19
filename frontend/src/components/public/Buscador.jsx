@@ -600,7 +600,10 @@ function BookCard({ book }) {
     const available = (book.disponibles || 0) > 0;
     const year = book.fecha_registro ? new Date(book.fecha_registro).getFullYear() : "";
     return (
-        <div style={{ cursor: "pointer" }} onClick={() => navigate(`/libros/${book.id_libro}`)}>
+        <div style={{ cursor: "pointer" }} onClick={() => {
+            if (book.id_libro) navigate(`/libros/${book.id_libro}`);
+            else if (book.digital_id) window.open(`/api/digitales/${book.digital_id}/descargar`, "_blank");
+        }}>
             <div
                 style={{
                     position: "relative",
@@ -695,7 +698,10 @@ function BookRow({ book }) {
                 padding: 14,
                 cursor: "pointer",
             }}
-            onClick={() => navigate(`/libros/${book.id_libro}`)}
+            onClick={() => {
+                if (book.id_libro) navigate(`/libros/${book.id_libro}`);
+                else if (book.digital_id) window.open(`/api/digitales/${book.digital_id}/descargar`, "_blank");
+            }}
         >
             {book.imagen_url ? (
                 <img

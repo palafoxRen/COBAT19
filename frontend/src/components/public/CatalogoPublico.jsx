@@ -514,8 +514,11 @@ export default function CatalogoPublico() {
                     >
                         {filteredBooks.slice(0, 6).map((book) => (
                             <div
-                                key={book.libro_id}
-                                onClick={() => navigate(`/libros/${book.id_libro || book.libro_id}`)}
+                                key={book.digital_id || book.libro_id || book.id_libro}
+                                onClick={() => {
+                                    if (book.id_libro) navigate(`/libros/${book.id_libro}`);
+                                    else if (book.digital_id) window.open(`/api/digitales/${book.digital_id}/descargar`, "_blank");
+                                }}
                                 style={{ cursor: "pointer" }}
                             >
                                 <div

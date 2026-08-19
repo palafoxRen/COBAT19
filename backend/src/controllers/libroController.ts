@@ -39,25 +39,54 @@ export const obtenerLibros = async (req: Request, res: Response): Promise<Respon
 
   const whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+  let digitalWhereSQL = '';
+  const digitalValues: any[] = [];
+  if (q && typeof q === 'string') {
+    digitalWhereSQL = `WHERE d.id_libro IS NULL AND d.titulo_digital ILIKE $1`;
+    digitalValues.push(`%${q}%`);
+  }
+
   const query = `
-    SELECT 
-      l.id_libro, l.titulo, l.autor, l.editorial, l.dewey, l.isbn, l.fecha_registro,
-      l.categoria_id, l.imagen_url, l.sinopsis,
-      c.nombre AS categoria_nombre,
-      COUNT(e.libro_inventario)::INTEGER AS total_ejemplares,
-      COALESCE(SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END), 0)::INTEGER AS disponibles,
-      MIN(d.digital_id) AS digital_id
-    FROM libros l
-    LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
-    LEFT JOIN ejemplares e ON l.id_libro = e.id_libro
-    LEFT JOIN libros_digitales d ON d.id_libro = l.id_libro
-    ${whereSQL}
-    GROUP BY l.id_libro, c.nombre
-    ORDER BY l.titulo ASC
+    (
+      SELECT 
+        l.id_libro, l.titulo, l.autor, l.editorial, l.dewey, l.isbn, l.fecha_registro,
+        l.categoria_id, l.imagen_url, l.sinopsis,
+        c.nombre AS categoria_nombre,
+        COUNT(e.libro_inventario)::INTEGER AS total_ejemplares,
+        COALESCE(SUM(CASE WHEN e.disponibilidad = true THEN 1 ELSE 0 END), 0)::INTEGER AS disponibles,
+        MIN(dg.digital_id)::INTEGER AS digital_id
+      FROM libros l
+      LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
+      LEFT JOIN ejemplares e ON l.id_libro = e.id_libro
+      LEFT JOIN libros_digitales dg ON dg.id_libro = l.id_libro
+      ${whereSQL}
+      GROUP BY l.id_libro, c.nombre
+    )
+    UNION ALL
+    (
+      SELECT 
+        NULL::INTEGER AS id_libro,
+        d.titulo_digital AS titulo,
+        NULL AS autor,
+        NULL AS editorial,
+        NULL AS dewey,
+        NULL AS isbn,
+        d.fecha_subida AS fecha_registro,
+        NULL::INTEGER AS categoria_id,
+        NULL AS imagen_url,
+        NULL AS sinopsis,
+        'Digital' AS categoria_nombre,
+        0 AS total_ejemplares,
+        0 AS disponibles,
+        d.digital_id::INTEGER
+      FROM libros_digitales d
+      ${digitalWhereSQL}
+    )
+    ORDER BY titulo ASC NULLS LAST
   `;
 
   try {
-    const result = await pool.query(query, values);
+    const result = await pool.query(query, [...values, ...digitalValues]);
     return res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error(error);
