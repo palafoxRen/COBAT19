@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Upload, Download, FileText, Eye, EyeOff } from "lucide-react";
 import { getDigitales } from "../../../api/digitales";
+import { getImagenUrl } from "../../../api/axios";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
@@ -125,21 +126,29 @@ export default function ListaPDF() {
                                             gap: 10,
                                         }}
                                     >
-                                        <div
-                                            style={{
-                                                width: 34,
-                                                height: 34,
-                                                borderRadius: 9,
-                                                background: "#f5e0e3",
-                                                color: "#7a2333",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            <FileText size={15} />
-                                        </div>
+                                        {d.imagen_url ? (
+                                            <img
+                                                src={getImagenUrl(d.imagen_url)}
+                                                alt={d.titulo_digital}
+                                                style={{ width: 34, height: 34, borderRadius: 9, objectFit: "cover", flexShrink: 0 }}
+                                            />
+                                        ) : (
+                                            <div
+                                                style={{
+                                                    width: 34,
+                                                    height: 34,
+                                                    borderRadius: 9,
+                                                    background: "#f5e0e3",
+                                                    color: "#7a2333",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <FileText size={15} />
+                                            </div>
+                                        )}
                                         {d.titulo_digital}
                                     </td>
                                     <td style={{ padding: "14px 10px", color: "#525252" }}>
@@ -169,7 +178,28 @@ export default function ListaPDF() {
                                         </span>
                                     </td>
                                     <td style={{ padding: "14px 10px", textAlign: "right" }}>
-                                        <button
+                                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                                            <Link
+                                                to={`/digitales/${d.digital_id}`}
+                                                style={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                    padding: "8px 14px",
+                                                    borderRadius: 9,
+                                                    border: "1px solid #7a2333",
+                                                    background: "#fff",
+                                                    color: "#7a2333",
+                                                    fontSize: 13,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                    textDecoration: "none",
+                                                }}
+                                            >
+                                                <Eye size={14} />
+                                                Ver
+                                            </Link>
+                                            <button
                                             onClick={() =>
                                                 window.open(
                                                     `${API_BASE}/api/digitales/${d.digital_id}/descargar`,
@@ -193,6 +223,7 @@ export default function ListaPDF() {
                                             <Download size={14} />
                                             Descargar
                                         </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

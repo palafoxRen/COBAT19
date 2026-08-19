@@ -517,7 +517,7 @@ export default function CatalogoPublico() {
                                 key={book.digital_id || book.libro_id || book.id_libro}
                                 onClick={() => {
                                     if (book.id_libro) navigate(`/libros/${book.id_libro}`);
-                                    else if (book.digital_id) window.open(`/api/digitales/${book.digital_id}/descargar`, "_blank");
+                                    else if (book.digital_id) navigate(`/digitales/${book.digital_id}`);
                                 }}
                                 style={{ cursor: "pointer" }}
                             >

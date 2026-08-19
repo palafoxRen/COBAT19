@@ -1,14 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Upload, BookOpen, FileText, X, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Upload, BookOpen, FileText, X, ShieldCheck, ImageIcon } from "lucide-react";
 import { uploadDigital } from "../../../api/digitales";
 import api from "../../../api/axios";
 
 export default function SubirPDF() {
     const navigate = useNavigate();
+    const imageInputRef = useRef(null);
     const [titulo, setTitulo] = useState("");
+    const [sinopsis, setSinopsis] = useState("");
     const [idLibro, setIdLibro] = useState("");
     const [archivo, setArchivo] = useState(null);
+    const [imagenFile, setImagenFile] = useState(null);
+    const [imagenPreview, setImagenPreview] = useState(null);
     const [libros, setLibros] = useState([]);
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState("");
@@ -21,6 +25,28 @@ export default function SubirPDF() {
             .then((res) => setLibros(res.data.data || []))
             .catch(() => setLibros([]));
     }, []);
+
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            setError("Solo se permiten archivos de imagen.");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setError("La imagen no debe superar 5 MB.");
+            return;
+        }
+        setImagenFile(file);
+        setImagenPreview(URL.createObjectURL(file));
+        setError("");
+    };
+
+    const handleRemoveImage = () => {
+        setImagenFile(null);
+        setImagenPreview(null);
+        if (imageInputRef.current) imageInputRef.current.value = "";
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -54,11 +80,22 @@ export default function SubirPDF() {
         try {
             const formData = new FormData();
             formData.append("titulo_digital", titulo.trim());
+            if (sinopsis.trim()) formData.append("sinopsis", sinopsis.trim());
             if (idLibro) formData.append("id_libro", idLibro);
             formData.append("pdf", archivo);
             formData.append("licencia_tipo", licenseType);
 
-            await uploadDigital(formData);
+            const res = await uploadDigital(formData);
+            const digitalId = res.data?.digital_id;
+
+            if (imagenFile && digitalId) {
+                const fd = new FormData();
+                fd.append("imagen", imagenFile);
+                await api.post(`/digitales/${digitalId}/imagen`, fd, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+            }
+
             navigate("/admin/digitales");
         } catch (err) {
             setError(err.response?.data?.message || "Error al subir el PDF. Inténtalo de nuevo.");
@@ -155,6 +192,102 @@ export default function SubirPDF() {
                         ))}
                     </select>
                 </div>
+
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    Sinopsis <span style={{ color: "#a3a3a3", fontWeight: 400 }}>(opcional)</span>
+                </label>
+                <textarea
+                    value={sinopsis}
+                    onChange={(e) => setSinopsis(e.target.value)}
+                    placeholder="Breve descripción del documento..."
+                    rows={3}
+                    style={{
+                        width: "100%",
+                        padding: "11px 14px",
+                        borderRadius: 9,
+                        border: "1px solid #e0e0e0",
+                        fontSize: 14,
+                        marginBottom: 18,
+                        outline: "none",
+                        resize: "vertical",
+                        fontFamily: "inherit",
+                    }}
+                />
+
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    Imagen de portada <span style={{ color: "#a3a3a3", fontWeight: 400 }}>(opcional)</span>
+                </label>
+                {imagenPreview ? (
+                    <div style={{ position: "relative", marginBottom: 18 }}>
+                        <img
+                            src={imagenPreview}
+                            alt="Vista previa"
+                            style={{ width: 120, height: 160, objectFit: "cover", borderRadius: 10, border: "1px solid #e0e0e0" }}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            style={{
+                                position: "absolute",
+                                top: -8,
+                                right: -8,
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                background: "#dc2626",
+                                color: "#fff",
+                                border: "none",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                            }}
+                        >
+                            <X size={12} />
+                        </button>
+                    </div>
+                ) : (
+                    <label
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            padding: "14px 18px",
+                            borderRadius: 9,
+                            border: "1.5px dashed #e0e0e0",
+                            background: "#fafafa",
+                            cursor: "pointer",
+                            marginBottom: 18,
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 10,
+                                background: "#f5e0e3",
+                                color: "#7a2333",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                            }}
+                        >
+                            <ImageIcon size={17} />
+                        </div>
+                        <div>
+                            <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Selecciona una imagen</p>
+                            <p style={{ margin: 0, fontSize: 12.5, color: "#a3a3a3" }}>JPG, PNG o WebP. Máximo 5 MB.</p>
+                        </div>
+                        <input
+                            ref={imageInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            style={{ display: "none" }}
+                        />
+                    </label>
+                )}
 
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
                     Archivo PDF *

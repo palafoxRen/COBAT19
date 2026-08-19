@@ -6,6 +6,7 @@ import AdminLayout from './pages/AdminLayout';
 import CatalogoPublico from './components/public/CatalogoPublico';
 import Buscador from './components/public/Buscador';
 import DetalleLibro from './components/public/DetalleLibro';
+import DetalleDigital from './components/public/DetalleDigital';
 import Dashboard from './components/admin/Dashboard';
 import GestionPrestamos from './components/admin/Prestamos/GestionPrestamos';
 import RegistrarPrestamo from './components/admin/Prestamos/RegistrarPrestamo';
@@ -43,6 +44,7 @@ const AppRoutes = () => {
             <Route path="/" element={<CatalogoPublico />} />
             <Route path="/catalogo" element={<Buscador />} />
             <Route path="/libros/:id" element={<DetalleLibro />} />
+            <Route path="/digitales/:id" element={<DetalleDigital />} />
             <Route path="/admin" element={<ProtectedRoute />}>
                 <Route index element={<Dashboard />} />
                 <Route path="prestamos" element={<GestionPrestamos />} />

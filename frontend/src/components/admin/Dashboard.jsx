@@ -562,7 +562,7 @@ export default function AdminDashboard() {
                             margin: "0 0 10px",
                         }}
                     >
-                        ADMIN REPORTS
+                        CONSULTA LOS REPORTES
                     </p>
                     <button
                         onClick={handleReporteMensual}
