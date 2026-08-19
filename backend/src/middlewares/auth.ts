@@ -21,7 +21,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
   const token = authHeader.split(' ')[1];
 
   if (!token) {
-    res.status(401).json({ succes: false, message: 'Token no proporcionado' });
+    res.status(401).json({ success: false, message: 'Token no proporcionado' });
     return;
   }
   const secret = process.env.JWT_SECRET as string;

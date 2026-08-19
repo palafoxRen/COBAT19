@@ -242,8 +242,7 @@ const AdminLayout = () => {
                     }}
                 >
                     <span>
-                        2026 Biblioteca COBAT. Sistema de Gestión Bibliotecaria para el
-                        COBAT 19.
+                        © 2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.
                     </span>
                     <span style={{ display: "flex", gap: 20 }}>
                         <a

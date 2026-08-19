@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import AdminLayout from './pages/AdminLayout';
 import CatalogoPublico from './components/public/CatalogoPublico';
 import Buscador from './components/public/Buscador';
+import DetalleLibro from './components/public/DetalleLibro';
 import Dashboard from './components/admin/Dashboard';
 import GestionPrestamos from './components/admin/Prestamos/GestionPrestamos';
 import RegistrarPrestamo from './components/admin/Prestamos/RegistrarPrestamo';
@@ -41,6 +42,7 @@ const AppRoutes = () => {
             />
             <Route path="/" element={<CatalogoPublico />} />
             <Route path="/catalogo" element={<Buscador />} />
+            <Route path="/libros/:id" element={<DetalleLibro />} />
             <Route path="/admin" element={<ProtectedRoute />}>
                 <Route index element={<Dashboard />} />
                 <Route path="prestamos" element={<GestionPrestamos />} />
@@ -52,6 +54,7 @@ const AppRoutes = () => {
                 <Route path="digitales" element={<ListaPDF />} />
                 <Route path="digitales/nuevo" element={<SubirPDF />} />
             </Route>
+            <Route path="*" element={<NotFound />} />
         </Routes>
     );
 };
@@ -63,6 +66,18 @@ function App() {
                 <AppRoutes />
             </BrowserRouter>
         </AuthProvider>
+    );
+}
+
+function NotFound() {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", fontFamily: "'Inter', sans-serif" }}>
+            <h1 style={{ fontSize: 72, fontWeight: 800, color: "#7a2333", margin: "0 0 8px" }}>404</h1>
+            <p style={{ fontSize: 18, color: "#525252", margin: "0 0 24px" }}>Página no encontrada</p>
+            <a href="/" style={{ background: "#7a2333", color: "#fff", padding: "10px 28px", borderRadius: 8, textDecoration: "none", fontWeight: 600, fontSize: 14 }}>
+                Volver al inicio
+            </a>
+        </div>
     );
 }
 

@@ -32,6 +32,7 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
     }
 
     const client = await pool.connect();
+    let committed = false;
     try {
         await client.query('BEGIN');
 
@@ -40,9 +41,11 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
             [inventario]
         );
         if (ejemplarCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ success: false, message: 'Ejemplar no encontrado' });
         }
         if (ejemplarCheck.rows[0].disponibilidad !== true) {
+            await client.query('ROLLBACK');
             return res.status(409).json({ success: false, message: 'El ejemplar no está disponible' });
         }
 
@@ -81,9 +84,10 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
         );
 
         await client.query('COMMIT');
+        committed = true;
         return res.status(201).json({ success: true, data: prestamoResult.rows[0] });
     } catch (error) {
-        await client.query('ROLLBACK');
+        if (!committed) await client.query('ROLLBACK');
         console.error('Error al registrar préstamo:', error);
         return res.status(500).json({ success: false, message: 'Error al registrar préstamo' });
     } finally {
@@ -97,6 +101,7 @@ export const devolverPrestamo = async (req: AuthRequest, res: Response): Promise
     const { fecha_devolucion } = req.body || {};
 
     const client = await pool.connect();
+    let committed = false;
     try {
         await client.query('BEGIN');
 
@@ -105,9 +110,11 @@ export const devolverPrestamo = async (req: AuthRequest, res: Response): Promise
             [prestamo_id]
         );
         if (prestamoCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ success: false, message: 'Préstamo no encontrado' });
         }
         if (prestamoCheck.rows[0].estatus_prestamo !== 'Activo') {
+            await client.query('ROLLBACK');
             return res.status(409).json({ success: false, message: 'El préstamo ya fue devuelto o está vencido' });
         }
 
@@ -124,9 +131,10 @@ export const devolverPrestamo = async (req: AuthRequest, res: Response): Promise
         );
 
         await client.query('COMMIT');
+        committed = true;
         return res.json({ success: true, message: 'Devolución registrada exitosamente' });
     } catch (error) {
-        await client.query('ROLLBACK');
+        if (!committed) await client.query('ROLLBACK');
         console.error('Error al registrar devolución:', error);
         return res.status(500).json({ success: false, message: 'Error al registrar devolución' });
     } finally {

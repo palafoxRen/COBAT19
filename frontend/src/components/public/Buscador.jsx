@@ -36,6 +36,7 @@ export default function Buscador() {
     const [sortOpen, setSortOpen] = useState(false);
     const [viewMode, setViewMode] = useState("grid");
     const [page, setPage] = useState(1);
+    const [error, setError] = useState(null);
     const [openSections, setOpenSections] = useState({
         categorias: true,
         disponibilidad: true,
@@ -46,6 +47,7 @@ export default function Buscador() {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                setError(null);
                 const [booksRes, catsRes] = await Promise.all([
                     api.get("/libros"),
                     api.get("/categorias"),
@@ -53,7 +55,7 @@ export default function Buscador() {
                 setBooks(booksRes.data.data || []);
                 setCategorias(catsRes.data.data || []);
             } catch {
-                console.error("Error al cargar catalogo");
+                setError("Error al cargar el catálogo. Intenta de nuevo.");
             } finally {
                 setLoading(false);
             }
@@ -132,7 +134,18 @@ export default function Buscador() {
     if (loading) {
         return (
             <div style={{ textAlign: "center", padding: "100px 20px", fontFamily: "'Inter', sans-serif" }}>
-                <p>Cargando catalogo...</p>
+                <p>Cargando catálogo...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div style={{ textAlign: "center", padding: "100px 20px", fontFamily: "'Inter', sans-serif" }}>
+                <p style={{ color: "#dc2626", fontSize: 16, marginBottom: 16 }}>{error}</p>
+                <button onClick={() => window.location.reload()} style={{ background: "#7a2333", color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontWeight: 600, cursor: "pointer" }}>
+                    Reintentar
+                </button>
             </div>
         );
     }
@@ -511,7 +524,7 @@ export default function Buscador() {
                     color: "#a3a3a3",
                 }}
             >
-                <span>2026 Biblioteca COBAT. Sistema de Gestion Bibliotecaria para el COBAT 19.</span>
+                <span>© 2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.</span>
                 <span style={{ display: "flex", gap: 20 }}>
                     <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#a3a3a3", textDecoration: "none" }}>
                         Politicas de privacidad
@@ -582,10 +595,11 @@ function CheckboxRow({ label, checked, onChange }) {
 }
 
 function BookCard({ book }) {
+    const navigate = useNavigate();
     const available = (book.disponibles || 0) > 0;
     const year = book.fecha_registro ? new Date(book.fecha_registro).getFullYear() : "";
     return (
-        <div style={{ cursor: "pointer" }}>
+        <div style={{ cursor: "pointer" }} onClick={() => navigate(`/libros/${book.id_libro}`)}>
             <div
                 style={{
                     position: "relative",
@@ -666,6 +680,7 @@ function BookCard({ book }) {
 }
 
 function BookRow({ book }) {
+    const navigate = useNavigate();
     const available = (book.disponibles || 0) > 0;
     const year = book.fecha_registro ? new Date(book.fecha_registro).getFullYear() : "";
     return (
@@ -679,6 +694,7 @@ function BookRow({ book }) {
                 padding: 14,
                 cursor: "pointer",
             }}
+            onClick={() => navigate(`/libros/${book.id_libro}`)}
         >
             {book.imagen ? (
                 <img

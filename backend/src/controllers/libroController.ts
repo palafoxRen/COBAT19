@@ -130,10 +130,10 @@ export const registrarLibro = async (req: Request, res: Response): Promise<void>
         res.status(409).json({ success: false, message: 'El código de inventario ya existe' });
       }
     } else {
+      console.error('Error al registrar material:', error);
       res.status(500).json({
         success: false,
         message: 'Error al registrar el material.',
-        error: error instanceof Error ? error.message : error
       });
     }
   } finally {

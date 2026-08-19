@@ -153,14 +153,14 @@ export default function AdminLogin() {
             >
               Bienvenido de nuevo a{" "}
               <span style={{ color: "#7a2333", fontWeight: 600 }}>
-                Biblioteca COBAT
+                Biblioteca COBAT 19
               </span>
             </p>
 
             <form onSubmit={handleSubmit} noValidate>
               {/* Usuario */}
               <label
-                htmlFor="usuario"
+                htmlFor="correo"
                 style={{
                   display: "block",
                   fontSize: 12,
@@ -195,7 +195,7 @@ export default function AdminLogin() {
                     boxSizing: "border-box",
                     padding: "11px 12px 11px 38px",
                     borderRadius: 10,
-                    border: `1px solid ${errors.usuario ? "#dc2626" : "#e0e0e0"}`,
+                    border: `1px solid ${errors.correo ? "#dc2626" : "#e0e0e0"}`,
                     fontSize: 14,
                     color: "#171717",
                     outline: "none",
@@ -413,7 +413,7 @@ export default function AdminLogin() {
             color: "#a3a3a3",
           }}
         >
-          <span>2026 Biblioteca COBAT. Sistema de Gestión Bibliotecaria para el COBAT 19.</span>
+          <span>© 2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.</span>
           <span style={{ display: "flex", gap: 20 }}>
             <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#a3a3a3", textDecoration: "none" }}>
               Política de privacidad

@@ -50,7 +50,7 @@ export default function CatalogoPublico() {
                 ]);
                 const librosConCategoria = (booksRes.data.data || []).map(libro => ({
                     ...libro,
-                    categoria: libro.categoria || null,
+                    categoria: libro.categoria_nombre || null,
                 }));
                 setBooks(librosConCategoria);
                 setCategorias(catsRes.data.data || []);
@@ -183,7 +183,7 @@ export default function CatalogoPublico() {
                     >
                         <BookOpen size={18} color="#fff" />
                     </div>
-                    <span style={{ fontWeight: 700, fontSize: 17 }}>Biblioteca COBAT</span>
+                    <span style={{ fontWeight: 700, fontSize: 17 }}>Biblioteca COBAT 19</span>
                 </div>
 
                 <nav style={{ display: "flex", gap: 28, fontSize: 14.5, color: "#404040" }}>
@@ -514,7 +514,7 @@ export default function CatalogoPublico() {
                         {filteredBooks.slice(0, 6).map((book) => (
                             <div
                                 key={book.libro_id}
-                                onClick={() => alert(`Ver detalles de "${book.titulo}"`)}
+                                onClick={() => navigate(`/libros/${book.id_libro || book.libro_id}`)}
                                 style={{ cursor: "pointer" }}
                             >
                                 <div
@@ -777,7 +777,7 @@ export default function CatalogoPublico() {
                         paddingTop: 20,
                     }}
                 >
-                    2026 Biblioteca COBAT19. Todos los derechos reservados.
+                    2026 Biblioteca COBAT 19. Todos los derechos reservados.
                 </p>
             </footer>
         </div>

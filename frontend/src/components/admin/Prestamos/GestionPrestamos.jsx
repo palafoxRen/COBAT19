@@ -38,6 +38,10 @@ export default function GestionPrestamos() {
     const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState("Todos");
     const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const PAGE_SIZE = 10;
+
+    useEffect(() => { setPage(1); }, [activeTab, search]); // eslint-disable-line react-hooks/set-state-in-effect
 
     const [form, setForm] = useState({
         bookId: "",
@@ -141,6 +145,9 @@ export default function GestionPrestamos() {
         }
         return list;
     }, [loans, activeTab, search]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredLoans.length / PAGE_SIZE));
+    const paginatedLoans = filteredLoans.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     const handleReturn = async (prestamoId) => {
         if (!window.confirm("¿Confirmar devolución de este libro?")) return;
@@ -593,7 +600,7 @@ export default function GestionPrestamos() {
                                     </tr>
                                 )}
                                 {!cargando &&
-                                    filteredLoans.map((loan) => {
+                                    paginatedLoans.map((loan) => {
                                         const style =
                                             STATUS_STYLES[loan.status] || STATUS_STYLES.Activo;
                                         return (
@@ -735,35 +742,37 @@ export default function GestionPrestamos() {
                         }}
                     >
                         <p style={{ margin: 0, fontSize: 13, color: "#737373" }}>
-                            Se están mostrando {filteredLoans.length} préstamo(s) activo(s)
+                            Mostrando {paginatedLoans.length} de {filteredLoans.length} préstamo(s)
                         </p>
                         <div style={{ display: "flex", gap: 8 }}>
                             <button
-                                disabled
+                                disabled={page === 1}
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 style={{
                                     border: "1px solid #e0e0e0",
-                                    background: "#fff",
-                                    color: "#a3a3a3",
+                                    background: page === 1 ? "#fff" : "#171717",
+                                    color: page === 1 ? "#a3a3a3" : "#fff",
                                     borderRadius: 8,
                                     padding: "8px 18px",
                                     fontSize: 13,
                                     fontWeight: 600,
-                                    cursor: "not-allowed",
+                                    cursor: page === 1 ? "not-allowed" : "pointer",
                                 }}
                             >
                                 Anterior
                             </button>
                             <button
-                                onClick={() => alert("No hay más préstamos por mostrar.")}
+                                disabled={page >= totalPages}
+                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                 style={{
                                     border: "none",
-                                    background: "#171717",
-                                    color: "#fff",
+                                    background: page >= totalPages ? "#e0e0e0" : "#171717",
+                                    color: page >= totalPages ? "#a3a3a3" : "#fff",
                                     borderRadius: 8,
                                     padding: "8px 18px",
                                     fontSize: 13,
                                     fontWeight: 600,
-                                    cursor: "pointer",
+                                    cursor: page >= totalPages ? "not-allowed" : "pointer",
                                 }}
                             >
                                 Siguiente

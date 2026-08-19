@@ -28,6 +28,7 @@ export default function AdminDashboard() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     // Datos reales desde la API
     const [totalLibros, setTotalLibros] = useState(0);
@@ -57,6 +58,7 @@ export default function AdminDashboard() {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
+                setError(null);
 
                 // Obtener libros (para estadísticas)
                 const librosRes = await api.get("/libros");
@@ -99,6 +101,7 @@ export default function AdminDashboard() {
                 setActividadReciente(recent);
             } catch (error) {
                 console.error("Error al cargar dashboard:", error);
+                setError("Error al cargar los datos del dashboard");
             } finally {
                 setLoading(false);
             }
@@ -106,13 +109,6 @@ export default function AdminDashboard() {
 
         fetchDashboardData();
     }, []);
-
-    // Redirigir al login si no hay usuario
-    useEffect(() => {
-        if (!user) {
-            navigate("/login");
-        }
-    }, [user, navigate]);
 
     // Registrar préstamo (real)
     const handleRegisterLoan = async (e) => {
@@ -230,6 +226,17 @@ export default function AdminDashboard() {
                 }}
             >
                 <p>Cargando dashboard...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 16 }}>
+                <p style={{ color: "#dc2626", fontSize: 16 }}>{error}</p>
+                <button onClick={() => window.location.reload()} style={{ background: "#7a2333", color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontWeight: 600, cursor: "pointer" }}>
+                    Reintentar
+                </button>
             </div>
         );
     }

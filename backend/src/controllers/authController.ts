@@ -26,11 +26,8 @@ export const getPerfil = async (req: AuthRequest, res: Response): Promise<Respon
 };
 
 export const login = async (req: Request, res: Response): Promise<Response> => {
-  // Tu frontend envía "usuario_nombre" o "correo" (según lo que hayas puesto)
-  // Pero tu tabla usa "nombre" y "correo". Vamos a aceptar ambos.
   const { usuario_nombre, correo, contrasena } = req.body;
 
-  // El identificador puede ser el nombre de usuario O el correo
   const identificador = usuario_nombre || correo;
 
   if (!identificador || !contrasena) {
@@ -41,7 +38,6 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
   }
 
   try {
-    //  CAMBIO IMPORTANTE: uso "nombre" (no "usuario_nombre")
     const result = await pool.query(
       `SELECT id_usuario, nombre, correo, password_hash, rol, activo 
         FROM usuarios 
@@ -65,7 +61,6 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       });
     }
 
-    // 🔥 CAMBIO IMPORTANTE: uso "password_hash" (no "contrasena_hash")
     const match = await bcrypt.compare(contrasena, user.password_hash);
     if (!match) {
       return res.status(401).json({
