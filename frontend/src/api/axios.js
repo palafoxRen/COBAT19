@@ -1,15 +1,15 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5000';
 
 export const getImagenUrl = (imagenUrl) => {
     if (!imagenUrl) return null;
     if (imagenUrl.startsWith('http')) return imagenUrl;
-    return `${API_BASE_URL}${imagenUrl}`;
+    return `${API_BASE}${imagenUrl}`;
 };
 
 const api = axios.create({
-    baseURL: `${API_BASE_URL}/api`,
+    baseURL: `${API_BASE}/api`,
     headers: { 'Content-Type': 'application/json' },
 });
 
