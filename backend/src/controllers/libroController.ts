@@ -123,7 +123,7 @@ export const obtenerLibroPorId = async (req: Request, res: Response): Promise<Re
   }
 };
 
-// REGISTRAR LIBRO (con primer ejemplar) - Ya lo tienes, pero ajustado
+// REGISTRAR LIBRO (con primer ejemplar)
 export const registrarLibro = async (req: Request, res: Response): Promise<void> => {
   const { titulo, autor, editorial, dewey, isbn, libro_inventario, categoria_id, sinopsis } = req.body;
 

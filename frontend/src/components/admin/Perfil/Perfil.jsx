@@ -6,6 +6,9 @@ import { actualizarPerfil, cambiarContrasena } from "../../../api/auth";
 export default function Perfil() {
     const { user } = useAuth();
 
+    // Inicialización lazy: lee del contexto del auth en vez de hacer
+    // un useEffect para sincronizar. El valor inicial del state viene
+    // directamente de user (ya cargado por AuthContext).
     const [nombre, setNombre] = useState(() => user?.nombre || "");
     const [correo, setCorreo] = useState(() => user?.correo || "");
     const [savingProfile, setSavingProfile] = useState(false);
@@ -17,6 +20,9 @@ export default function Perfil() {
     const [savingPassword, setSavingPassword] = useState(false);
     const [passwordMsg, setPasswordMsg] = useState(null);
 
+    // Al guardar, el backend retorna el usuario actualizado.
+    // Se guarda en localStorage y se recarga la página para que
+    // AuthContext revalide la sesión con los nuevos datos.
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         setProfileMsg(null);

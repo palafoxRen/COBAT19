@@ -16,6 +16,9 @@ export default function SubirPDF() {
     const [libros, setLibros] = useState([]);
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState("");
+    // Modal de verificación de licencia — se muestra antes de subir.
+    // El usuario debe confirmar que el PDF no infringe derechos de autor
+    // antes de que se ejecute el upload real.
     const [showLicenseModal, setShowLicenseModal] = useState(false);
     const [licenseType, setLicenseType] = useState("");
     const [licenseAccepted, setLicenseAccepted] = useState(false);
@@ -72,6 +75,9 @@ export default function SubirPDF() {
         setShowLicenseModal(true);
     };
 
+    // Upload de 2 fases: primero se sube el PDF (POST /digitales con FormData),
+    // el backend retorna el digital_id. Si el usuario seleccionó imagen de
+    // portada, se hace un segundo POST con la imagen usando ese digital_id.
     const handleConfirmUpload = async () => {
         if (!licenseType || !licenseAccepted) return;
 

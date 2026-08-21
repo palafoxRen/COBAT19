@@ -5,6 +5,8 @@ import { uploadPDF, uploadImage } from '../middlewares/upload';
 
 const router = Router();
 
+// Listado requiere token (solo admin ve todos, incluyendo deshabilitados).
+// Detalle y descarga son públicos (el catálogo público los necesita).
 router.get('/', verifyToken, getDigitales);
 router.get('/:id', getDigitalPorId);
 router.get('/:digital_id/descargar', descargarDigital);

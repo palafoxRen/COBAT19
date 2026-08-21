@@ -1,6 +1,9 @@
 import multer from "multer";
 import path from 'path';
 
+// Usamos memoryStorage para que el archivo quede en buffer (req.file.buffer)
+// y poder escribirlo manualmente con writeFileSync. Así controlamos el nombre
+// y la ruta destino sin depender del comportamiento por defecto de multer.
 const storage = multer.memoryStorage();
 
 const pdfFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {

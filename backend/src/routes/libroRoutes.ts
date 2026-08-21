@@ -12,6 +12,7 @@ import { uploadImage } from '../middlewares/upload';
 
 const router = Router();
 
+// GET son públicos (catálogo público + detalle). Escritura requiere token.
 router.get('/', obtenerLibros);
 router.get('/:id', obtenerLibroPorId);
 router.post('/', verifyToken, registrarLibro);

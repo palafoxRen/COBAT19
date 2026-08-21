@@ -49,6 +49,7 @@ export const actualizarPerfil = async (req: AuthRequest, res: Response): Promise
     }
     return res.json({ success: true, usuario: result.rows[0] });
   } catch (error: any) {
+    // 23505 = unique_violation en PostgreSQL — el correo ya existe en la tabla
     if (error.code === "23505") {
       return res.status(409).json({ success: false, message: "El correo ya está en uso por otra cuenta" });
     }
@@ -92,9 +93,14 @@ export const cambiarContrasena = async (req: AuthRequest, res: Response): Promis
   }
 };
 
+// Login: acepta correo O nombre de usuario como identificador.
+// Retorna un JWT con 8h de expiración. El campo `rol` defaulta a
+// "Bibliotecario" cuando es null en la BD (compatibilidad con usuarios
+// creados antes de agregar roles).
 export const login = async (req: Request, res: Response): Promise<Response> => {
   const { usuario_nombre, correo, contrasena } = req.body;
 
+  // Se permite login por nombre O por correo — el front puede enviar cualquiera de los dos
   const identificador = usuario_nombre || correo;
 
   if (!identificador || !contrasena) {
@@ -144,6 +150,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       });
     }
 
+    // JWT payload: solo id, nombre y rol. Expira en 8 horas.
     const token = jwt.sign(
       {
         id_usuario: user.id_usuario,
@@ -154,6 +161,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       { expiresIn: "8h" },
     );
 
+    // Registra la fecha de último acceso para auditoría
     await pool.query(
       "UPDATE usuarios SET ultimo_acceso = NOW() WHERE id_usuario = $1",
       [user.id_usuario],

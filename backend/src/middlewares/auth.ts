@@ -1,16 +1,23 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+// Payload decodificado del JWT — contiene solo lo necesario para identificar
+// al usuario en las rutas protegidas. El token se genera en authController.login.
 export interface PayloadToken {
   id_usuario: number;
   nombre: string;
   rol: string;
 }
 
+// Extiende Request para adjuntar el payload del token decodificado.
+// Los controladores lo usan como req.usuario para saber quién hizo la petición.
 export interface AuthRequest extends Request {
   usuario?: PayloadToken;
 }
 
+// Middleware de autenticación: verifica que el header Authorization contenga
+// un JWT válido firmado con JWT_SECRET. Si es válido, decodifica el payload
+// y lo adjunta a req.usuario para que los controladores lo consuman.
 export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

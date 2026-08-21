@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+// La URL base viene de .env (VITE_API_URL). Se elimina el sufijo /api
+// porque cada interceptor/controlador ya lo incluye en sus paths.
 const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5000';
 
 export const getImagenUrl = (imagenUrl) => {
@@ -13,6 +15,8 @@ const api = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
+// Request interceptor: adjunta el JWT automáticamente a cada petición.
+// Así ningún componente necesita pasar el token manualmente.
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -21,6 +25,10 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Response interceptor: si el backend responde 401 (token expirado/inválido)
+// o 403 (token válido pero sin permisos), limpia la sesión y redirige
+// al login. El guard `!window.location.pathname.startsWith('/login')`
+// evita un loop infinito de redirects si ya estamos en la página de login.
 api.interceptors.response.use(
     (response) => response,
     (error) => {

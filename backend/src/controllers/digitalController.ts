@@ -10,6 +10,10 @@ if (!existsSync(IMAGES_DIR)) {
     mkdirSync(IMAGES_DIR, { recursive: true });
 }
 
+// Subir libro digital (PDF): sanitiza el nombre del archivo original
+// reemplazando caracteres especiales por guiones bajos y agregando un
+// timestamp para evitar colisiones de nombres. El archivo se escribe
+// directamente en disco con writeFileSync ya que está en memoria (multer memoryStorage).
 export const uploadDigital = async (req: Request, res: Response): Promise<Response> => {
     const { titulo_digital, id_libro, sinopsis, autor, categoria_id } = req.body;
 
@@ -46,6 +50,9 @@ export const uploadDigital = async (req: Request, res: Response): Promise<Respon
     }
 };
 
+// Upload de imagen de portada para un digital existente.
+// Guarda en uploads/images/, elimina la imagen anterior si existía
+// para no acumular archivos huérfanos en disco.
 export const subirImagenDigital = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
 
@@ -66,6 +73,7 @@ export const subirImagenDigital = async (req: Request, res: Response): Promise<R
 
         const imagenUrl = `/uploads/images/${nombreArchivo}`;
 
+        // Eliminar imagen anterior si el digital ya tenía una portada
         const oldImage = check.rows[0].imagen_url;
         if (oldImage && oldImage.startsWith("/uploads/images/")) {
             const oldPath = path.join(__dirname, "../..", oldImage);
@@ -124,6 +132,10 @@ export const getDigitalPorId = async (req: Request, res: Response): Promise<Resp
     }
 };
 
+// Descarga/visualización de PDF: por defecto usa Content-Disposition: inline
+// para mostrar el PDF en el navegador. Si se pasa ?download=1, cambia a
+// attachment para forzar descarga. Ambos casos validan que el archivo exista
+// en disco antes de enviarlo.
 export const descargarDigital = async (req: Request, res: Response): Promise<void> => {
     const { digital_id } = req.params;
 
@@ -155,8 +167,12 @@ export const descargarDigital = async (req: Request, res: Response): Promise<voi
     }
 };
 
+// Whitelist de campos permitidos en UPDATE — previene que el cliente
+// envíe campos no esperados (ej: id_libro, fecha_subida, etc.)
 const ALLOWED_UPDATE_FIELDS = ['titulo_digital', 'autor', 'sinopsis', 'categoria_id', 'id_libro', 'esta_habilitado'];
 
+// Actualización dinámica: construye SET clauses con parámetros numerados
+// ($1, $2...) en vez de interpolación directa, para prevenir SQL injection.
 export const actualizarDigital = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
     const updates = req.body;
@@ -214,6 +230,9 @@ export const toggleHabilitado = async (req: Request, res: Response): Promise<Res
     }
 };
 
+// Eliminar digital: primero borra el registro de la BD, luego intenta
+// borrar los archivos físicos (PDF + imagen) de disco. Si los archivos
+// ya no existen, simplemente se ignora el error (catch vacío).
 export const eliminarDigital = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
     try {

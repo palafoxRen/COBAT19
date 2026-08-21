@@ -20,6 +20,10 @@ import EditarDigital from './components/admin/Digitales/EditarDigital';
 import Perfil from './components/admin/Perfil/Perfil';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+// ProtectedRoute: guard que protege todas las rutas /admin/*.
+// Mientras se carga la sesión (loading), muestra spinner.
+// Si no hay usuario autenticado, redirige a /login.
+// Si hay usuario, renderiza AdminLayout que maneja sidebar + Outlet.
 const ProtectedRoute = () => {
     const { user, loading } = useAuth();
 
@@ -41,6 +45,9 @@ const AppRoutes = () => {
         <Routes>
             <Route
                 path="/login"
+                // Si ya hay sesión activa, redirige al admin en vez de
+                // mostrar el login de nuevo. Evita que un usuario
+                // autenticado acceda manualmente a /login.
                 element={user ? <Navigate to="/admin" replace /> : <Login />}
             />
             <Route path="/" element={<CatalogoPublico />} />

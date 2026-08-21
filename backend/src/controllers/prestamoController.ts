@@ -3,6 +3,10 @@ import pool from '../config/db';
 import { AuthRequest } from '../middlewares/auth';
 
 // === REGISTRAR PRÉSTAMO ===
+// Usa una transacción con SELECT FOR UPDATE para evitar doble préstamo
+// del mismo ejemplar en caso de concurrencia (dos peticiones simultáneas
+// intentando prestar el mismo libro). El flag `committed` controla el
+// ROLLBACK en el catch: solo revierte si COMMIT aún no se ejecutó.
 export const createPrestamo = async (req: AuthRequest, res: Response): Promise<Response> => {
     const {
         inventario,
@@ -36,7 +40,9 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
     try {
         await client.query('BEGIN');
 
-        const ejemplarCheck = await client.query(
+        // Bloquea la fila del ejemplar con FOR UPDATE — si otra transacción
+    // intenta modificarla, espera a que esta termine. Evita race conditions.
+    const ejemplarCheck = await client.query(
             'SELECT disponibilidad FROM ejemplares WHERE libro_inventario = $1 FOR UPDATE',
             [inventario]
         );
@@ -49,6 +55,7 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
             return res.status(409).json({ success: false, message: 'El ejemplar no está disponible' });
         }
 
+        // Si no se proporciona fecha_limite, default 7 días desde hoy
         let limite = fecha_limite;
         if (!limite) {
             const hoy = new Date();
@@ -87,6 +94,8 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
         committed = true;
         return res.status(201).json({ success: true, data: prestamoResult.rows[0] });
     } catch (error) {
+        // Solo revierte si el COMMIT no se ejecutó — si ya se hizo, el ROLLBACK
+        // lanzaría un error y perderíamos la información real del problema
         if (!committed) await client.query('ROLLBACK');
         console.error('Error al registrar préstamo:', error);
         return res.status(500).json({ success: false, message: 'Error al registrar préstamo' });
@@ -96,6 +105,8 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
 };
 
 // === DEVOLVER PRÉSTAMO ===
+// Misma transacción que createPrestamo: bloquea el préstamo con FOR UPDATE,
+// verifica que esté en estado 'Activo', actualiza estatus y libera el ejemplar.
 export const devolverPrestamo = async (req: AuthRequest, res: Response): Promise<Response> => {
     const { prestamo_id } = req.params;
     const { fecha_devolucion } = req.body || {};
@@ -143,6 +154,8 @@ export const devolverPrestamo = async (req: AuthRequest, res: Response): Promise
 };
 
 // === LISTAR PRÉSTAMOS (CON FILTROS) ===
+// Construye WHERE dinámico con parámetros numerados ($1, $2...)
+// para prevenir SQL injection. Los filtros son opcionales.
 export const getPrestamos = async (req: AuthRequest, res: Response): Promise<Response> => {
     const { estado, tipo_usuario, fecha_inicio, fecha_fin } = req.query;
     let whereClauses: string[] = [];
