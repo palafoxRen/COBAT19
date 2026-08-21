@@ -11,6 +11,16 @@ export const getPerfil = async () => {
     return response.data;
 };
 
+export const actualizarPerfil = async (data) => {
+    const response = await api.put('auth/me', data);
+    return response.data;
+};
+
+export const cambiarContrasena = async (data) => {
+    const response = await api.put('auth/me/password', data);
+    return response.data;
+};
+
 export const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

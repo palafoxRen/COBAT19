@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     ClipboardList,
     FileText,
+    User,
     LogOut,
     ChevronRight,
 } from "lucide-react";
@@ -138,20 +139,29 @@ const AdminLayout = () => {
                     </nav>
                 </div>
 
-                <div style={{ padding: 20, borderTop: "1px solid #ececec" }}>
+                <div style={{ padding: 20, borderTop: "1px solid #ececec", display: "flex", flexDirection: "column", gap: 8 }}>
+                    <NavLink
+                        to="/admin/perfil"
+                        style={({ isActive }) => ({
+                            display: "flex", alignItems: "center", gap: 10,
+                            padding: "9px 12px", borderRadius: 9,
+                            background: isActive ? "#f5f5f5" : "transparent",
+                            color: isActive ? "#7a2333" : "#404040",
+                            fontSize: 14, fontWeight: isActive ? 600 : 500,
+                            textDecoration: "none",
+                        })}
+                    >
+                        <User size={16} />
+                        Mi perfil
+                    </NavLink>
                     <button
                         onClick={handleLogout}
                         style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            background: "none",
-                            border: "none",
-                            color: "#dc2626",
-                            fontSize: 14,
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            padding: 0,
+                            display: "flex", alignItems: "center", gap: 8,
+                            background: "none", border: "none",
+                            color: "#dc2626", fontSize: 14, fontWeight: 600,
+                            cursor: "pointer", padding: "9px 12px",
+                            borderRadius: 9, textAlign: "left",
                         }}
                     >
                         <LogOut size={16} />
@@ -194,7 +204,10 @@ const AdminLayout = () => {
                             <Bell size={19} color="#404040" />
                         </button>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div
+                            style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+                            onClick={() => navigate("/admin/perfil")}
+                        >
                             <div style={{ textAlign: "right" }}>
                                 <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600 }}>
                                     {user?.nombre || "Bibliotecario"}
