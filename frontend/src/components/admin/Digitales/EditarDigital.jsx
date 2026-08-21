@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import api, { getImagenUrl } from "../../../api/axios";
 import { getDigitalPorId, actualizarDigital, toggleHabilitado } from "../../../api/digitales";
+import ConfirmDialog from "../../ConfirmDialog";
 
 export default function EditarDigital() {
     const { id } = useParams();
@@ -33,6 +34,9 @@ export default function EditarDigital() {
     const [categorias, setCategorias] = useState([]);
     const [imagenFile, setImagenFile] = useState(null);
     const [imagenPreview, setImagenPreview] = useState(null);
+
+    const [confirmSave, setConfirmSave] = useState(false);
+    const [confirmToggle, setConfirmToggle] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -80,13 +84,18 @@ export default function EditarDigital() {
         if (imageInputRef.current) imageInputRef.current.value = "";
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         setError("");
         if (!titulo.trim()) {
             setError("El título es obligatorio.");
             return;
         }
+        setConfirmSave(true);
+    };
+
+    const doSave = async () => {
+        setConfirmSave(false);
         setSubmitting(true);
         try {
             await actualizarDigital(id, {
@@ -112,7 +121,10 @@ export default function EditarDigital() {
         }
     };
 
-    const handleToggle = async () => {
+    const handleToggle = () => setConfirmToggle(true);
+
+    const doToggle = async () => {
+        setConfirmToggle(false);
         try {
             const res = await toggleHabilitado(id);
             setEstaHabilitado(res.data.esta_habilitado);
@@ -278,6 +290,30 @@ export default function EditarDigital() {
                     {submitting ? "Guardando..." : "Guardar cambios"}
                 </button>
             </form>
+
+            {confirmSave && (
+                <ConfirmDialog
+                    titulo="Guardar cambios"
+                    mensaje="¿Deseas guardar los cambios realizados en este libro digital?"
+                    textoConfirmar="Guardar"
+                    onConfirmar={doSave}
+                    onCancelar={() => setConfirmSave(false)}
+                />
+            )}
+
+            {confirmToggle && (
+                <ConfirmDialog
+                    titulo={estaHabilitado ? "Ocultar libro digital" : "Habilitar libro digital"}
+                    mensaje={estaHabilitado
+                        ? "¿Deseas ocultar este libro digital del catálogo público? Los usuarios no podrán verlo."
+                        : "¿Deseas hacer visible este libro digital en el catálogo público?"
+                    }
+                    textoConfirmar={estaHabilitado ? "Ocultar" : "Habilitar"}
+                    colorConfirmar={estaHabilitado ? "#dc2626" : "#15803d"}
+                    onConfirmar={doToggle}
+                    onCancelar={() => setConfirmToggle(false)}
+                />
+            )}
         </>
     );
 }

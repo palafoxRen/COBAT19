@@ -12,6 +12,7 @@ import {
     X,
 } from "lucide-react";
 import api, { getImagenUrl } from "../../../api/axios";
+import ConfirmDialog from "../../ConfirmDialog";
 
 export default function EditarLibro() {
     const { id } = useParams();
@@ -24,6 +25,7 @@ export default function EditarLibro() {
     const [categorias, setCategorias] = useState([]);
     const [imagenPreview, setImagenPreview] = useState(null);
     const [imagenFile, setImagenFile] = useState(null);
+    const [confirmSave, setConfirmSave] = useState(false);
 
     const [form, setForm] = useState({
         titulo: "",
@@ -98,7 +100,7 @@ export default function EditarLibro() {
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         setErrorMsg("");
 
@@ -107,6 +109,11 @@ export default function EditarLibro() {
             return;
         }
 
+        setConfirmSave(true);
+    };
+
+    const doSave = async () => {
+        setConfirmSave(false);
         setSubmitting(true);
         try {
             const payload = {
@@ -128,7 +135,6 @@ export default function EditarLibro() {
                 });
             }
 
-            alert("Libro actualizado correctamente.");
             navigate("/admin/libros");
         } catch (error) {
             setErrorMsg(
@@ -459,6 +465,16 @@ export default function EditarLibro() {
                     ))}
                 </div>
             </div>
+
+            {confirmSave && (
+                <ConfirmDialog
+                    titulo="Guardar cambios"
+                    mensaje="¿Deseas guardar los cambios realizados en este libro?"
+                    textoConfirmar="Guardar"
+                    onConfirmar={doSave}
+                    onCancelar={() => setConfirmSave(false)}
+                />
+            )}
         </>
     );
 }

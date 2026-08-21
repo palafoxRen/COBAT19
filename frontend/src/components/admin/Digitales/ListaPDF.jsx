@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Upload, Download, FileText, Eye, EyeOff, Pencil } from "lucide-react";
+import { Upload, FileText, Eye, EyeOff, Pencil } from "lucide-react";
 import { getDigitales } from "../../../api/digitales";
 import { getImagenUrl } from "../../../api/axios";
-
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
 const formatoFecha = (fecha) =>
     fecha ? new Date(fecha).toLocaleDateString() : "-";
@@ -180,7 +178,7 @@ export default function ListaPDF() {
                                     <td style={{ padding: "14px 10px", textAlign: "right" }}>
                                         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                                             <Link
-                                                to={`/digitales/${d.digital_id}`}
+                                                to={`/admin/digitales/${d.digital_id}/editar`}
                                                 style={{
                                                     display: "inline-flex",
                                                     alignItems: "center",
@@ -196,53 +194,9 @@ export default function ListaPDF() {
                                                     textDecoration: "none",
                                                 }}
                                             >
-                                                <Eye size={14} />
-                                                Ver
-                                            </Link>
-                                            <Link
-                                                to={`/admin/digitales/${d.digital_id}/editar`}
-                                                style={{
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: 6,
-                                                    padding: "8px 14px",
-                                                    borderRadius: 9,
-                                                    border: "1px solid #e0e0e0",
-                                                    background: "#fff",
-                                                    color: "#525252",
-                                                    fontSize: 13,
-                                                    fontWeight: 600,
-                                                    cursor: "pointer",
-                                                    textDecoration: "none",
-                                                }}
-                                            >
                                                 <Pencil size={14} />
                                                 Editar
                                             </Link>
-                                            <button
-                                            onClick={() =>
-                                                window.open(
-                                                    `${API_BASE}/api/digitales/${d.digital_id}/descargar?download=1`,
-                                                    "_blank",
-                                                )
-                                            }
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: 6,
-                                                padding: "8px 14px",
-                                                borderRadius: 9,
-                                                border: "1px solid #e0e0e0",
-                                                background: "#fff",
-                                                color: "#525252",
-                                                fontSize: 13,
-                                                fontWeight: 600,
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            <Download size={14} />
-                                            Descargar
-                                        </button>
                                         </div>
                                     </td>
                                 </tr>
