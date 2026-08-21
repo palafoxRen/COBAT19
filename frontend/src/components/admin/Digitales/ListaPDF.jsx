@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Upload, FileText, Eye, EyeOff, Pencil } from "lucide-react";
-import { getDigitales } from "../../../api/digitales";
+import { Upload, FileText, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
+import { getDigitales, eliminarDigital } from "../../../api/digitales";
 import { getImagenUrl } from "../../../api/axios";
+import ConfirmDialog from "../../ConfirmDialog";
 
 const formatoFecha = (fecha) =>
     fecha ? new Date(fecha).toLocaleDateString() : "-";
@@ -11,6 +12,7 @@ export default function ListaPDF() {
     const [digitales, setDigitales] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState("");
+    const [confirmDelete, setConfirmDelete] = useState(null);
 
     useEffect(() => {
         getDigitales()
@@ -18,6 +20,17 @@ export default function ListaPDF() {
             .catch(() => setError("Error al cargar los libros digitales."))
             .finally(() => setCargando(false));
     }, []);
+
+    const doDelete = async () => {
+        const id = confirmDelete;
+        setConfirmDelete(null);
+        try {
+            await eliminarDigital(id);
+            setDigitales((prev) => prev.filter((d) => d.digital_id !== id));
+        } catch {
+            setError("Error al eliminar el libro digital.");
+        }
+    };
 
     return (
         <>
@@ -185,9 +198,9 @@ export default function ListaPDF() {
                                                     gap: 6,
                                                     padding: "8px 14px",
                                                     borderRadius: 9,
-                                                    border: "1px solid #7a2333",
+                                                    border: "1px solid #e0e0e0",
                                                     background: "#fff",
-                                                    color: "#7a2333",
+                                                    color: "#525252",
                                                     fontSize: 13,
                                                     fontWeight: 600,
                                                     cursor: "pointer",
@@ -197,6 +210,25 @@ export default function ListaPDF() {
                                                 <Pencil size={14} />
                                                 Editar
                                             </Link>
+                                            <button
+                                                onClick={() => setConfirmDelete(d.digital_id)}
+                                                style={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                    padding: "8px 14px",
+                                                    borderRadius: 9,
+                                                    border: "1px solid #fca5a5",
+                                                    background: "#fff",
+                                                    color: "#dc2626",
+                                                    fontSize: 13,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                <Trash2 size={14} />
+                                                Eliminar
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -205,6 +237,20 @@ export default function ListaPDF() {
                     </table>
                 </div>
             )}
+
+            {confirmDelete && (() => {
+                const item = digitales.find((d) => d.digital_id === confirmDelete);
+                return (
+                    <ConfirmDialog
+                        titulo="Eliminar libro digital"
+                        mensaje={`¿Estás seguro de eliminar "${item?.titulo_digital}"? Se eliminará permanentemente el archivo PDF y la imagen asociada.`}
+                        textoConfirmar="Eliminar"
+                        colorConfirmar="#dc2626"
+                        onConfirmar={doDelete}
+                        onCancelar={() => setConfirmDelete(null)}
+                    />
+                );
+            })()}
         </>
     );
 }

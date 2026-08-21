@@ -26,3 +26,8 @@ export const toggleHabilitado = async (id) => {
     const response = await api.patch(`/digitales/${id}/toggle`);
     return response.data;
 };
+
+export const eliminarDigital = async (id) => {
+    const response = await api.delete(`/digitales/${id}`);
+    return response.data;
+};

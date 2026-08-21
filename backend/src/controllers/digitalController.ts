@@ -213,3 +213,34 @@ export const toggleHabilitado = async (req: Request, res: Response): Promise<Res
         return res.status(500).json({ success: false, message: "Error al cambiar visibilidad" });
     }
 };
+
+export const eliminarDigital = async (req: Request, res: Response): Promise<Response> => {
+    const { id } = req.params;
+    try {
+        const check = await pool.query(
+            "SELECT url_pdf, imagen_url FROM libros_digitales WHERE digital_id = $1",
+            [id]
+        );
+        if (check.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Libro digital no encontrado" });
+        }
+
+        const { url_pdf, imagen_url } = check.rows[0];
+
+        await pool.query("DELETE FROM libros_digitales WHERE digital_id = $1", [id]);
+
+        if (url_pdf) {
+            const pdfPath = path.join(__dirname, "../..", url_pdf);
+            try { unlinkSync(pdfPath); } catch { /* ya no existe */ }
+        }
+        if (imagen_url && imagen_url.startsWith("/uploads/images/")) {
+            const imgPath = path.join(__dirname, "../..", imagen_url);
+            try { unlinkSync(imgPath); } catch { /* ya no existe */ }
+        }
+
+        return res.json({ success: true, message: "Libro digital eliminado" });
+    } catch (error) {
+        console.error("Error al eliminar libro digital:", error);
+        return res.status(500).json({ success: false, message: "Error al eliminar el libro digital" });
+    }
+};

@@ -1,18 +1,21 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Pencil, BookOpen } from "lucide-react";
+import { Search, Plus, Pencil, BookOpen, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "../../../api/axios";
+import ConfirmDialog from "../../ConfirmDialog";
 
 export default function ListaLibros() {
     const [libros, setLibros] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [search, setSearch] = useState("");
+    const [confirmDelete, setConfirmDelete] = useState(null);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         let cancelled = false;
         api.get("/libros")
             .then((res) => { if (!cancelled) setLibros(res.data.data || []); })
-            .catch((error) => { if (!cancelled) console.error("Error al cargar libros:", error); })
+            .catch((e) => { if (!cancelled) setError(e.response?.data?.message || "Error al cargar libros."); })
             .finally(() => { if (!cancelled) setCargando(false); });
         return () => { cancelled = true; };
     }, []);
@@ -28,6 +31,17 @@ export default function ListaLibros() {
                 l.isbn?.toLowerCase().includes(q),
         );
     }, [libros, search]);
+
+    const doDelete = async () => {
+        const id = confirmDelete;
+        setConfirmDelete(null);
+        try {
+            await api.delete(`/libros/${id}`);
+            setLibros((prev) => prev.filter((l) => l.id_libro !== id));
+        } catch (e) {
+            setError(e.response?.data?.message || "Error al eliminar el libro.");
+        }
+    };
 
     return (
         <>
@@ -70,6 +84,22 @@ export default function ListaLibros() {
                     Agregar libro
                 </Link>
             </div>
+
+            {error && (
+                <div
+                    style={{
+                        background: "#fdeceb",
+                        border: "1px solid #f6c2bd",
+                        color: "#dc2626",
+                        borderRadius: 8,
+                        padding: "12px 14px",
+                        fontSize: 13,
+                        marginBottom: 16,
+                    }}
+                >
+                    {error}
+                </div>
+            )}
 
             <div
                 style={{
@@ -243,25 +273,46 @@ export default function ListaLibros() {
                                             </span>
                                         </td>
                                         <td style={{ padding: "14px 10px" }}>
-                                            <Link
-                                                to={`/admin/libros/${libro.id_libro}/editar`}
-                                                style={{
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: 6,
-                                                    border: "1px solid #7a2333",
-                                                    color: "#7a2333",
-                                                    background: "#fff",
-                                                    borderRadius: 8,
-                                                    padding: "7px 14px",
-                                                    fontSize: 12.5,
-                                                    fontWeight: 600,
-                                                    textDecoration: "none",
-                                                }}
-                                            >
-                                                <Pencil size={13} />
-                                                Editar
-                                            </Link>
+                                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                                <Link
+                                                    to={`/admin/libros/${libro.id_libro}/editar`}
+                                                    style={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        gap: 6,
+                                                        border: "1px solid #7a2333",
+                                                        color: "#7a2333",
+                                                        background: "#fff",
+                                                        borderRadius: 8,
+                                                        padding: "7px 14px",
+                                                        fontSize: 12.5,
+                                                        fontWeight: 600,
+                                                        textDecoration: "none",
+                                                    }}
+                                                >
+                                                    <Pencil size={13} />
+                                                    Editar
+                                                </Link>
+                                                <button
+                                                    onClick={() => setConfirmDelete(libro.id_libro)}
+                                                    style={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        gap: 6,
+                                                        border: "1px solid #fca5a5",
+                                                        color: "#dc2626",
+                                                        background: "#fff",
+                                                        borderRadius: 8,
+                                                        padding: "7px 14px",
+                                                        fontSize: 12.5,
+                                                        fontWeight: 600,
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    <Trash2 size={13} />
+                                                    Eliminar
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -273,6 +324,23 @@ export default function ListaLibros() {
                     Mostrando {filtrados.length} de {libros.length} libro(s)
                 </p>
             </div>
+
+            {confirmDelete && (() => {
+                const item = libros.find((l) => l.id_libro === confirmDelete);
+                return (
+                    <ConfirmDialog
+                        titulo="Eliminar libro"
+                        mensaje={item?.total_ejemplares > 0
+                            ? `No se puede eliminar "${item?.titulo}" porque tiene ${item.total_ejemplares} ejemplar(es) registrado(s). Primero elimina o transfiere los ejemplares.`
+                            : `¿Estás seguro de eliminar "${item?.titulo}"? Esta acción no se puede deshacer.`
+                        }
+                        textoConfirmar="Eliminar"
+                        colorConfirmar="#dc2626"
+                        onConfirmar={doDelete}
+                        onCancelar={() => setConfirmDelete(null)}
+                    />
+                );
+            })()}
         </>
     );
 }
