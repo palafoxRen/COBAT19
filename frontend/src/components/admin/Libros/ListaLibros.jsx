@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Pencil, BookOpen, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, BookOpen, Trash2, Tags } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "../../../api/axios";
 import ConfirmDialog from "../../ConfirmDialog";
+import GestionCategorias from "./GestionCategorias";
 
 export default function ListaLibros() {
     const [libros, setLibros] = useState([]);
@@ -10,6 +11,7 @@ export default function ListaLibros() {
     const [search, setSearch] = useState("");
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [error, setError] = useState("");
+    const [showCategorias, setShowCategorias] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -64,25 +66,46 @@ export default function ListaLibros() {
                     </p>
                 </div>
 
-                <Link
-                    to="/admin/libros/nuevo"
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        background: "#7a2333",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 10,
-                        padding: "11px 18px",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        textDecoration: "none",
-                    }}
-                >
-                    <Plus size={16} />
-                    Agregar libro
-                </Link>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <button
+                        onClick={() => setShowCategorias(true)}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            background: "#fff",
+                            color: "#525252",
+                            border: "1px solid #e0e0e0",
+                            borderRadius: 10,
+                            padding: "11px 18px",
+                            fontSize: 14,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                        }}
+                    >
+                        <Tags size={16} />
+                        Categorías
+                    </button>
+                    <Link
+                        to="/admin/libros/nuevo"
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            background: "#7a2333",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 10,
+                            padding: "11px 18px",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            textDecoration: "none",
+                        }}
+                    >
+                        <Plus size={16} />
+                        Agregar libro
+                    </Link>
+                </div>
             </div>
 
             {error && (
@@ -341,6 +364,10 @@ export default function ListaLibros() {
                     />
                 );
             })()}
+
+            {showCategorias && (
+                <GestionCategorias onClose={() => setShowCategorias(false)} />
+            )}
         </>
     );
 }
