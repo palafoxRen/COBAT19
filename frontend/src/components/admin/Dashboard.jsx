@@ -11,6 +11,7 @@ import {
     CheckCircle2,
     X,
     Folder,
+    ImageIcon,
 } from "lucide-react";
 import { useAuth } from "../../contexts/useAuth";
 import api from "../../api/axios";
@@ -51,7 +52,9 @@ export default function AdminDashboard() {
         autor: "",
         dewey: "",
         inventario: "",
+        categoria_id: "",
     });
+    const [bookImageFile, setBookImageFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
     // Cargar datos del dashboard
@@ -183,12 +186,21 @@ export default function AdminDashboard() {
 
         setSubmitting(true);
         try {
-            await api.post("/libros", {
+            const res = await api.post("/libros", {
                 titulo: bookForm.titulo,
                 autor: bookForm.autor,
                 dewey: bookForm.dewey,
                 libro_inventario: bookForm.inventario,
+                categoria_id: bookForm.categoria_id || null,
             });
+
+            if (bookImageFile && res.data?.data?.id_libro) {
+                const fd = new FormData();
+                fd.append("imagen", bookImageFile);
+                await api.post(`/libros/${res.data.data.id_libro}/imagen`, fd, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+            }
 
             // Recargar datos
             const librosRes = await api.get("/libros");
@@ -204,7 +216,8 @@ export default function AdminDashboard() {
             setCategorias(categoriasRes.data.data || []);
 
             setShowBookModal(false);
-            setBookForm({ titulo: "", autor: "", dewey: "", inventario: "" });
+            setBookForm({ titulo: "", autor: "", dewey: "", inventario: "", categoria_id: "" });
+            setBookImageFile(null);
             alert("Libro agregado exitosamente.");
         } catch (error) {
             alert(error.response?.data?.message || "Error al agregar el libro.");
@@ -981,6 +994,76 @@ export default function AdminDashboard() {
                                 }}
                                 required
                             />
+                            <label
+                                style={{ fontSize: 12.5, fontWeight: 600, color: "#404040" }}
+                            >
+                                Categoría
+                            </label>
+                            <div style={{ position: "relative", marginBottom: 14 }}>
+                                <Folder
+                                    size={14}
+                                    color="#a3a3a3"
+                                    style={{
+                                        position: "absolute",
+                                        left: 10,
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                    }}
+                                />
+                                <select
+                                    value={bookForm.categoria_id}
+                                    onChange={(e) =>
+                                        setBookForm({ ...bookForm, categoria_id: e.target.value })
+                                    }
+                                    style={{
+                                        width: "100%",
+                                        boxSizing: "border-box",
+                                        padding: "10px 12px 10px 32px",
+                                        borderRadius: 9,
+                                        border: "1px solid #e0e0e0",
+                                        fontSize: 14,
+                                        outline: "none",
+                                        background: "#fff",
+                                        appearance: "none",
+                                    }}
+                                >
+                                    <option value="">Sin categoría</option>
+                                    {categorias.map((c) => (
+                                        <option key={c.categoria_id} value={c.categoria_id}>
+                                            {c.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <label
+                                style={{ fontSize: 12.5, fontWeight: 600, color: "#404040" }}
+                            >
+                                Portada
+                            </label>
+                            <label
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    padding: "10px 14px",
+                                    borderRadius: 9,
+                                    border: "1.5px dashed #e0e0e0",
+                                    background: "#fafafa",
+                                    cursor: "pointer",
+                                    marginBottom: 14,
+                                }}
+                            >
+                                <ImageIcon size={16} color="#a3a3a3" />
+                                <span style={{ fontSize: 13, color: bookImageFile ? "#171717" : "#a3a3a3" }}>
+                                    {bookImageFile ? bookImageFile.name : "Seleccionar imagen (opcional)"}
+                                </span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setBookImageFile(e.target.files[0] || null)}
+                                    style={{ display: "none" }}
+                                />
+                            </label>
                             <label
                                 style={{ fontSize: 12.5, fontWeight: 600, color: "#404040" }}
                             >
