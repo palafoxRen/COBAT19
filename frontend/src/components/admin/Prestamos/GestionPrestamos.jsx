@@ -161,14 +161,17 @@ export default function GestionPrestamos() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (
-            !form.bookId.trim() ||
-            !form.personType ||
-            !form.name.trim() ||
-            !form.matricula.trim() ||
-            !form.dueDate
-        ) {
+        if (!form.bookId.trim() || !form.personType) {
             alert("Por favor completa todos los campos.");
+            return;
+        }
+
+        if (form.personType === "Alumno/a" && !form.matricula.trim()) {
+            alert("Ingresa la matrícula del alumno.");
+            return;
+        }
+        if (form.personType === "Docente" && !form.name.trim()) {
+            alert("Ingresa el nombre del docente.");
             return;
         }
 
@@ -177,8 +180,8 @@ export default function GestionPrestamos() {
             const payload = {
                 inventario: form.bookId,
                 tipo_usuario: form.personType === "Alumno/a" ? "Alumno" : "Docente",
-                usuario_identificador: form.matricula,
-                usuario_nombre: form.name,
+                usuario_identificador: form.personType === "Alumno/a" ? form.matricula : form.matricula || form.name,
+                usuario_nombre: form.personType === "Docente" ? form.name : undefined,
                 fecha_limite: form.dueDate,
             };
 
@@ -379,23 +382,31 @@ export default function GestionPrestamos() {
                         </div>
                         <FieldHint>Indique si es alumno o docente</FieldHint>
 
-                        <FieldLabel>Nombre</FieldLabel>
-                        <IconInput
-                            icon={User}
-                            placeholder="Nombre completo"
-                            value={form.name}
-                            onChange={(v) => setForm({ ...form, name: v })}
-                        />
-                        <FieldHint>Ingrese el nombre del docente o alumno</FieldHint>
+                        {form.personType === "Alumno/a" && (
+                            <>
+                                <FieldLabel>Matrícula del alumno</FieldLabel>
+                                <IconInput
+                                    icon={User}
+                                    placeholder="20B19000000"
+                                    value={form.matricula}
+                                    onChange={(v) => setForm({ ...form, matricula: v })}
+                                />
+                                <FieldHint>Ingrese la matrícula del alumno</FieldHint>
+                            </>
+                        )}
 
-                        <FieldLabel>Matrícula del alumno</FieldLabel>
-                        <IconInput
-                            icon={User}
-                            placeholder="20B19000000"
-                            value={form.matricula}
-                            onChange={(v) => setForm({ ...form, matricula: v })}
-                        />
-                        <FieldHint>Ingrese la matrícula del alumno</FieldHint>
+                        {form.personType === "Docente" && (
+                            <>
+                                <FieldLabel>Nombre del docente</FieldLabel>
+                                <IconInput
+                                    icon={User}
+                                    placeholder="Dr. Juan Pérez"
+                                    value={form.name}
+                                    onChange={(v) => setForm({ ...form, name: v })}
+                                />
+                                <FieldHint>Ingrese el nombre completo del docente</FieldHint>
+                            </>
+                        )}
 
                         <FieldLabel>Fecha límite de devolución</FieldLabel>
                         <IconInput
