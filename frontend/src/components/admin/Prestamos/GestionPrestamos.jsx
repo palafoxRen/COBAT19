@@ -240,7 +240,7 @@ export default function GestionPrestamos() {
                         {
                             icon: AlertCircle,
                             label: "Devoluciones atrasadas",
-                            value: String(overdueCount).padStart(2, "0"),
+                            value: overdueCount,
                             color: "#171717",
                             iconBg: "#fdeceb",
                             iconColor: "#dc2626",
@@ -248,7 +248,7 @@ export default function GestionPrestamos() {
                         {
                             icon: Clock,
                             label: "Próximas devoluciones",
-                            value: String(upcomingCount).padStart(2, "0"),
+                            value: upcomingCount,
                             color: "#171717",
                             iconBg: "#f5e0e3",
                             iconColor: "#7a2333",
