@@ -16,6 +16,7 @@ import EditarLibro from './components/admin/Libros/EditarLibro';
 import ReporteMensual from './components/admin/Reportes/ReporteMensual';
 import ListaPDF from './components/admin/Digitales/ListaPDF';
 import SubirPDF from './components/admin/Digitales/SubirPDF';
+import EditarDigital from './components/admin/Digitales/EditarDigital';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const ProtectedRoute = () => {
@@ -55,6 +56,7 @@ const AppRoutes = () => {
                 <Route path="reportes" element={<ReporteMensual />} />
                 <Route path="digitales" element={<ListaPDF />} />
                 <Route path="digitales/nuevo" element={<SubirPDF />} />
+                <Route path="digitales/:id/editar" element={<EditarDigital />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Routes>

@@ -11,7 +11,7 @@ if (!existsSync(IMAGES_DIR)) {
 }
 
 export const uploadDigital = async (req: Request, res: Response): Promise<Response> => {
-    const { titulo_digital, id_libro, sinopsis } = req.body;
+    const { titulo_digital, id_libro, sinopsis, autor, categoria_id } = req.body;
 
     if (!req.file) {
         return res.status(400).json({ success: false, message: "Debes adjuntar un archivo PDF" });
@@ -31,11 +31,12 @@ export const uploadDigital = async (req: Request, res: Response): Promise<Respon
         writeFileSync(rutaFisica, req.file.buffer);
 
         const libroId = id_libro && String(id_libro).trim() ? Number(id_libro) : null;
+        const catId = categoria_id && String(categoria_id).trim() ? Number(categoria_id) : null;
         const result = await pool.query(
-            `INSERT INTO libros_digitales (id_libro, titulo_digital, url_pdf, sinopsis, esta_habilitado)
-             VALUES ($1, $2, $3, $4, true)
-             RETURNING digital_id, id_libro, titulo_digital, url_pdf, sinopsis, imagen_url, esta_habilitado, fecha_subida`,
-            [libroId, String(titulo_digital).trim(), urlPdf, sinopsis || null]
+            `INSERT INTO libros_digitales (id_libro, titulo_digital, url_pdf, sinopsis, autor, categoria_id, esta_habilitado)
+             VALUES ($1, $2, $3, $4, $5, $6, true)
+             RETURNING *`,
+            [libroId, String(titulo_digital).trim(), urlPdf, sinopsis || null, autor || null, catId]
         );
 
         return res.status(201).json({ success: true, message: "Libro digital subido exitosamente", data: result.rows[0] });
@@ -84,9 +85,11 @@ export const getDigitales = async (_req: Request, res: Response): Promise<Respon
     try {
         const result = await pool.query(
             `SELECT d.digital_id, d.titulo_digital, d.url_pdf, d.sinopsis, d.imagen_url,
-                    d.esta_habilitado, d.fecha_subida, d.id_libro, l.titulo AS libro_titulo
+                    d.autor, d.categoria_id, d.esta_habilitado, d.fecha_subida, d.id_libro,
+                    l.titulo AS libro_titulo, c.nombre AS categoria_nombre
              FROM libros_digitales d
              LEFT JOIN libros l ON d.id_libro = l.id_libro
+             LEFT JOIN categorias c ON d.categoria_id = c.categoria_id
              ORDER BY d.fecha_subida DESC`
         );
         return res.json({ success: true, data: result.rows });
@@ -101,11 +104,13 @@ export const getDigitalPorId = async (req: Request, res: Response): Promise<Resp
     try {
         const result = await pool.query(
             `SELECT d.digital_id, d.titulo_digital, d.url_pdf, d.sinopsis, d.imagen_url,
-                    d.esta_habilitado, d.fecha_subida, d.id_libro,
+                    d.autor, d.categoria_id, d.esta_habilitado, d.fecha_subida, d.id_libro,
                     l.titulo AS libro_titulo, l.autor AS libro_autor,
-                    l.imagen_url AS libro_imagen_url, l.sinopsis AS libro_sinopsis
+                    l.imagen_url AS libro_imagen_url, l.sinopsis AS libro_sinopsis,
+                    c.nombre AS categoria_nombre
              FROM libros_digitales d
              LEFT JOIN libros l ON d.id_libro = l.id_libro
+             LEFT JOIN categorias c ON d.categoria_id = c.categoria_id
              WHERE d.digital_id = $1`,
             [id]
         );
@@ -147,5 +152,64 @@ export const descargarDigital = async (req: Request, res: Response): Promise<voi
     } catch (error) {
         console.error("Error al descargar libro digital:", error);
         res.status(500).json({ success: false, message: "Error al descargar el libro digital" });
+    }
+};
+
+const ALLOWED_UPDATE_FIELDS = ['titulo_digital', 'autor', 'sinopsis', 'categoria_id', 'id_libro', 'esta_habilitado'];
+
+export const actualizarDigital = async (req: Request, res: Response): Promise<Response> => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const allowedUpdates: Record<string, any> = {};
+    for (const key of ALLOWED_UPDATE_FIELDS) {
+        if (key in updates) {
+            allowedUpdates[key] = updates[key];
+        }
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+        return res.status(400).json({ success: false, message: "No se enviaron campos para actualizar" });
+    }
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    for (const [key, value] of Object.entries(allowedUpdates)) {
+        setClauses.push(`${key} = $${paramIndex}`);
+        values.push(value === '' ? null : value);
+        paramIndex++;
+    }
+
+    values.push(id);
+    const query = `UPDATE libros_digitales SET ${setClauses.join(', ')} WHERE digital_id = $${paramIndex} RETURNING *`;
+
+    try {
+        const result = await pool.query(query, values);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Libro digital no encontrado" });
+        }
+        return res.json({ success: true, message: "Libro digital actualizado", data: result.rows[0] });
+    } catch (error) {
+        console.error("Error al actualizar libro digital:", error);
+        return res.status(500).json({ success: false, message: "Error al actualizar el libro digital" });
+    }
+};
+
+export const toggleHabilitado = async (req: Request, res: Response): Promise<Response> => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            `UPDATE libros_digitales SET esta_habilitado = NOT esta_habilitado WHERE digital_id = $1 RETURNING digital_id, esta_habilitado`,
+            [id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Libro digital no encontrado" });
+        }
+        return res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+        console.error("Error al cambiar visibilidad:", error);
+        return res.status(500).json({ success: false, message: "Error al cambiar visibilidad" });
     }
 };

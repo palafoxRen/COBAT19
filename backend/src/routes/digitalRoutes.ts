@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { uploadDigital, subirImagenDigital, getDigitales, getDigitalPorId, descargarDigital } from '../controllers/digitalController';
+import { uploadDigital, subirImagenDigital, getDigitales, getDigitalPorId, descargarDigital, actualizarDigital, toggleHabilitado } from '../controllers/digitalController';
 import { verifyToken } from '../middlewares/auth';
 import { uploadPDF, uploadImage } from '../middlewares/upload';
 
@@ -10,5 +10,7 @@ router.get('/:id', getDigitalPorId);
 router.get('/:digital_id/descargar', descargarDigital);
 router.post('/', verifyToken, uploadPDF.single('pdf'), uploadDigital);
 router.post('/:id/imagen', verifyToken, uploadImage.single('imagen'), subirImagenDigital);
+router.put('/:id', verifyToken, actualizarDigital);
+router.patch('/:id/toggle', verifyToken, toggleHabilitado);
 
 export default router;

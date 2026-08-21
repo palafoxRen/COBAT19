@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Upload, Download, FileText, Eye, EyeOff } from "lucide-react";
+import { Upload, Download, FileText, Eye, EyeOff, Pencil } from "lucide-react";
 import { getDigitales } from "../../../api/digitales";
 import { getImagenUrl } from "../../../api/axios";
 
@@ -198,6 +198,26 @@ export default function ListaPDF() {
                                             >
                                                 <Eye size={14} />
                                                 Ver
+                                            </Link>
+                                            <Link
+                                                to={`/admin/digitales/${d.digital_id}/editar`}
+                                                style={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                    padding: "8px 14px",
+                                                    borderRadius: 9,
+                                                    border: "1px solid #e0e0e0",
+                                                    background: "#fff",
+                                                    color: "#525252",
+                                                    fontSize: 13,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                    textDecoration: "none",
+                                                }}
+                                            >
+                                                <Pencil size={14} />
+                                                Editar
                                             </Link>
                                             <button
                                             onClick={() =>
