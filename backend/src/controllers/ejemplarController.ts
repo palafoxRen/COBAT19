@@ -70,3 +70,24 @@ export const updateDisponibilidad = async (req: Request, res: Response): Promise
     return res.status(500).json({ success: false, message: 'Error al actualizar disponibilidad' });
   }
 };  
+
+export const deleteEjemplar = async (req: Request, res: Response): Promise<Response> => {
+  const { inventario } = req.params;
+  try {
+    const check = await pool.query(
+      'SELECT disponibilidad FROM ejemplares WHERE libro_inventario = $1',
+      [inventario]
+    );
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Ejemplar no encontrado' });
+    }
+    if (check.rows[0].disponibilidad === false) {
+      return res.status(409).json({ success: false, message: 'No se puede eliminar un ejemplar que está prestado actualmente' });
+    }
+    await pool.query('DELETE FROM ejemplares WHERE libro_inventario = $1', [inventario]);
+    return res.json({ success: true, message: 'Ejemplar eliminado' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: 'Error al eliminar el ejemplar' });
+  }
+};  

@@ -10,6 +10,7 @@ import {
     Folder,
     ImageIcon,
     X,
+    Trash2,
 } from "lucide-react";
 import api, { getImagenUrl } from "../../../api/axios";
 import ConfirmDialog from "../../ConfirmDialog";
@@ -26,6 +27,7 @@ export default function EditarLibro() {
     const [imagenPreview, setImagenPreview] = useState(null);
     const [imagenFile, setImagenFile] = useState(null);
     const [confirmSave, setConfirmSave] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(null);
 
     const [form, setForm] = useState({
         titulo: "",
@@ -142,6 +144,19 @@ export default function EditarLibro() {
             );
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const doDeleteEjemplar = async () => {
+        const inventario = confirmDelete;
+        setConfirmDelete(null);
+        try {
+            await api.delete(`/ejemplares/${encodeURIComponent(inventario)}`);
+            setEjemplares((prev) => prev.filter((e) => e.libro_inventario !== inventario));
+        } catch (error) {
+            setErrorMsg(
+                error.response?.data?.message || "Error al eliminar el ejemplar.",
+            );
         }
     };
 
@@ -449,18 +464,33 @@ export default function EditarLibro() {
                                 </p>
                                 <p style={{ margin: 0, color: "#a3a3a3" }}>{e.estado_fisico}</p>
                             </div>
-                            <span
-                                style={{
-                                    padding: "3px 10px",
-                                    borderRadius: 999,
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    background: e.disponibilidad ? "#f0fdf4" : "#fdeceb",
-                                    color: e.disponibilidad ? "#15803d" : "#dc2626",
-                                }}
-                            >
-                                {e.disponibilidad ? "Disponible" : "Prestado"}
-                            </span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span
+                                    style={{
+                                        padding: "3px 10px",
+                                        borderRadius: 999,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        background: e.disponibilidad ? "#f0fdf4" : "#fdeceb",
+                                        color: e.disponibilidad ? "#15803d" : "#dc2626",
+                                    }}
+                                >
+                                    {e.disponibilidad ? "Disponible" : "Prestado"}
+                                </span>
+                                {e.disponibilidad && (
+                                    <button
+                                        onClick={() => setConfirmDelete(e.libro_inventario)}
+                                        style={{
+                                            width: 28, height: 28, borderRadius: 7,
+                                            border: "1px solid #fca5a5", background: "#fff",
+                                            color: "#dc2626", cursor: "pointer",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                        }}
+                                    >
+                                        <Trash2 size={13} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -473,6 +503,17 @@ export default function EditarLibro() {
                     textoConfirmar="Guardar"
                     onConfirmar={doSave}
                     onCancelar={() => setConfirmSave(false)}
+                />
+            )}
+
+            {confirmDelete && (
+                <ConfirmDialog
+                    titulo="Eliminar ejemplar"
+                    mensaje={`¿Estás seguro de eliminar el ejemplar "${confirmDelete}"? Esta acción no se puede deshacer.`}
+                    textoConfirmar="Eliminar"
+                    colorConfirmar="#dc2626"
+                    onConfirmar={doDeleteEjemplar}
+                    onCancelar={() => setConfirmDelete(null)}
                 />
             )}
         </>
