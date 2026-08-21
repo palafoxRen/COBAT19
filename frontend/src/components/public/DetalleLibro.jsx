@@ -227,7 +227,7 @@ export default function DetalleLibro() {
 
             {/* Footer */}
             <footer style={{ borderTop: "1px solid #f0f0f0", padding: "20px 32px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "#a3a3a3" }}>
-                <span>© 2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.</span>
+                <span>2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.</span>
             </footer>
 
             {/* Modal préstamo */}

@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Eye, EyeOff, User, Lock, Info, ArrowLeft, BookOpen } from "lucide-react";
+import { User, Lock, Info, ArrowLeft, BookOpen } from "lucide-react";
 import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminLogin() {
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [loginResult, setLoginResult] = useState(null); // null | "success" | "error"
@@ -254,14 +253,15 @@ export default function AdminLogin() {
                 />
                 <input
                   id="contrasena"
-                  type={showPassword ? "text" : "password"}
+                  type="password"
+                  autoComplete="new-password"
                   value={contrasena}
                   onChange={(e) => setContrasena(e.target.value)}
                   placeholder="***********"
                   style={{
                     width: "100%",
                     boxSizing: "border-box",
-                    padding: "11px 40px 11px 38px",
+                    padding: "11px 12px 11px 38px",
                     borderRadius: 10,
                     border: `1px solid ${errors.contrasena ? "#dc2626" : "#e0e0e0"}`,
                     fontSize: 14,
@@ -273,28 +273,6 @@ export default function AdminLogin() {
                     (e.target.style.borderColor = errors.contrasena ? "#dc2626" : "#e0e0e0")
                   }
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  style={{
-                    position: "absolute",
-                    right: 10,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 4,
-                    display: "flex",
-                  }}
-                >
-                  {showPassword ? (
-                    <EyeOff size={17} color="#a3a3a3" />
-                  ) : (
-                    <Eye size={17} color="#a3a3a3" />
-                  )}
-                </button>
               </div>
               {errors.contrasena && (
                 <p style={{ color: "#dc2626", fontSize: 12.5, margin: "0 0 12px" }}>
