@@ -44,6 +44,7 @@ export default function AdminDashboard() {
         inventario: "",
         usuario_identificador: "",
         tipo_usuario: "Alumno",
+        fecha_limite: "",
     });
     const [bookForm, setBookForm] = useState({
         titulo: "",
@@ -124,6 +125,7 @@ export default function AdminDashboard() {
                 inventario: loanForm.inventario,
                 tipo_usuario: loanForm.tipo_usuario,
                 usuario_identificador: loanForm.usuario_identificador,
+                fecha_limite: loanForm.fecha_limite || undefined,
             };
 
             await api.post("/prestamos", payload);
@@ -156,6 +158,7 @@ export default function AdminDashboard() {
                 inventario: "",
                 usuario_identificador: "",
                 tipo_usuario: "Alumno",
+                fecha_limite: "",
             });
             alert("Préstamo registrado exitosamente.");
         } catch (error) {
@@ -811,6 +814,30 @@ export default function AdminDashboard() {
                                     outline: "none",
                                 }}
                                 required
+                            />
+                            <label
+                                style={{ fontSize: 12.5, fontWeight: 600, color: "#404040" }}
+                            >
+                                Fecha de devolución
+                            </label>
+                            <input
+                                type="date"
+                                value={loanForm.fecha_limite}
+                                onChange={(e) =>
+                                    setLoanForm({ ...loanForm, fecha_limite: e.target.value })
+                                }
+                                min={new Date().toISOString().split("T")[0]}
+                                style={{
+                                    width: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "10px 12px",
+                                    borderRadius: 9,
+                                    border: "1px solid #e0e0e0",
+                                    fontSize: 14,
+                                    margin: "6px 0 20px",
+                                    outline: "none",
+                                    background: "#fff",
+                                }}
                             />
                             <button
                                 type="submit"
