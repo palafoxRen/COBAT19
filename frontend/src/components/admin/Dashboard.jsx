@@ -432,12 +432,9 @@ export default function AdminDashboard() {
                                     <th style={{ padding: "8px 10px", fontWeight: 600 }}>
                                         Título
                                     </th>
-                                    <th style={{ padding: "8px 10px", fontWeight: 600 }}>User</th>
+                                    <th style={{ padding: "8px 10px", fontWeight: 600 }}>Alumno/Docente</th>
                                     <th style={{ padding: "8px 10px", fontWeight: 600 }}>
-                                        Timestamp
-                                    </th>
-                                    <th style={{ padding: "8px 10px", fontWeight: 600 }}>
-                                        Estado
+                                        Fecha
                                     </th>
                                 </tr>
                             </thead>
@@ -466,22 +463,6 @@ export default function AdminDashboard() {
                                             </td>
                                             <td style={{ padding: "12px 10px", color: "#a3a3a3" }}>
                                                 {row.time}
-                                            </td>
-                                            <td style={{ padding: "12px 10px" }}>
-                                                <span
-                                                    style={{
-                                                        padding: "3px 10px",
-                                                        borderRadius: 999,
-                                                        fontSize: 12,
-                                                        fontWeight: 600,
-                                                        background:
-                                                            row.status === "Flagged" ? "#dc2626" : "#f0f0f0",
-                                                        color:
-                                                            row.status === "Flagged" ? "#fff" : "#404040",
-                                                    }}
-                                                >
-                                                    {row.status}
-                                                </span>
                                             </td>
                                         </tr>
                                     );
