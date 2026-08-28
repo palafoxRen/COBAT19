@@ -3,7 +3,11 @@ import { getStoragePublicUrl } from './storage';
 
 // La URL base viene de .env (VITE_API_URL). Se elimina el sufijo /api
 // porque cada interceptor/controlador ya lo incluye en sus paths.
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5000';
+// IMPORTANTE: solo se usa el fallback local si la variable NO está definida.
+// Si VITE_API_URL=/api, al quitar el sufijo queda '' (cadena vacía) y eso
+// es correcto: baseURL pasa a ser '/api' (same-origin). No debe caer al fallback.
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const API_BASE = rawApiUrl ? rawApiUrl.replace(/\/api\/?$/, '') : 'http://localhost:5000';
 
 export const getImagenUrl = (imagenUrl) => {
     if (!imagenUrl) return null;
