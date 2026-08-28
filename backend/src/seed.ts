@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import pool from './config/db';
 
 // Usuarios base del sistema. La contraseña inicial NO va en el código:
