@@ -101,10 +101,10 @@ export const obtenerLibroPorId = async (req: Request, res: Response): Promise<Re
     const libroResult = await pool.query(
       `SELECT l.*, c.nombre AS categoria_nombre,
               d.digital_id, d.titulo_digital, d.url_pdf, d.esta_habilitado
-       FROM libros l
-       LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
-       LEFT JOIN libros_digitales d ON d.id_libro = l.id_libro
-       WHERE l.id_libro = $1`,
+        FROM libros l
+        LEFT JOIN categorias c ON l.categoria_id = c.categoria_id
+        LEFT JOIN libros_digitales d ON d.id_libro = l.id_libro
+        WHERE l.id_libro = $1`,
       [id]
     );
     if (libroResult.rows.length === 0) {

@@ -38,7 +38,7 @@ export const uploadDigital = async (req: Request, res: Response): Promise<Respon
         const catId = categoria_id && String(categoria_id).trim() ? Number(categoria_id) : null;
         const result = await pool.query(
             `INSERT INTO libros_digitales (id_libro, titulo_digital, url_pdf, sinopsis, autor, categoria_id, esta_habilitado)
-             VALUES ($1, $2, $3, $4, $5, $6, true)
+            VALUES ($1, $2, $3, $4, $5, $6, true)
              RETURNING *`,
             [libroId, String(titulo_digital).trim(), urlPdf, sinopsis || null, autor || null, catId]
         );

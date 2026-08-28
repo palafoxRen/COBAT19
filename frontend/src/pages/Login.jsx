@@ -393,10 +393,10 @@ export default function AdminLogin() {
         >
           <span>© 2026 Biblioteca COBAT 19. Sistema de Gestión Bibliotecaria.</span>
           <span style={{ display: "flex", gap: 20 }}>
-            <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#a3a3a3", textDecoration: "none" }}>
+            <a href="/privacidad" style={{ color: "#a3a3a3", textDecoration: "none" }}>
               Política de privacidad
             </a>
-            <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "#a3a3a3", textDecoration: "none" }}>
+            <a href="/terminos" style={{ color: "#a3a3a3", textDecoration: "none" }}>
               Términos y condiciones
             </a>
           </span>

@@ -18,6 +18,9 @@ import ListaPDF from './components/admin/Digitales/ListaPDF';
 import SubirPDF from './components/admin/Digitales/SubirPDF';
 import EditarDigital from './components/admin/Digitales/EditarDigital';
 import Perfil from './components/admin/Perfil/Perfil';
+import GestionUsuarios from './components/admin/Usuarios/GestionUsuarios';
+import Privacidad from './pages/Privacidad';
+import Terminos from './pages/Terminos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // ProtectedRoute: guard que protege todas las rutas /admin/*.
@@ -54,6 +57,8 @@ const AppRoutes = () => {
             <Route path="/catalogo" element={<Buscador />} />
             <Route path="/libros/:id" element={<DetalleLibro />} />
             <Route path="/digitales/:id" element={<DetalleDigital />} />
+            <Route path="/privacidad" element={<Privacidad />} />
+            <Route path="/terminos" element={<Terminos />} />
             <Route path="/admin" element={<ProtectedRoute />}>
                 <Route index element={<Dashboard />} />
                 <Route path="prestamos" element={<GestionPrestamos />} />
@@ -66,6 +71,7 @@ const AppRoutes = () => {
                 <Route path="digitales/nuevo" element={<SubirPDF />} />
                 <Route path="digitales/:id/editar" element={<EditarDigital />} />
                 <Route path="perfil" element={<Perfil />} />
+                <Route path="usuarios" element={<GestionUsuarios />} />
             </Route>
             <Route path="*" element={<NotFound />} />
         </Routes>

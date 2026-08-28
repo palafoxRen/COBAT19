@@ -10,6 +10,7 @@ import {
     User,
     LogOut,
     ChevronRight,
+    Users,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
     { to: "/admin/prestamos", label: "Préstamos", icon: ClipboardList },
     { to: "/admin/reportes", label: "Reporte mensual", icon: FileText },
     { to: "/admin/digitales", label: "Libros digitales", icon: BookOpen },
+    { to: "/admin/usuarios", label: "Usuarios", icon: Users, adminOnly: true },
 ];
 
 const AdminLayout = () => {
@@ -93,7 +95,7 @@ const AdminLayout = () => {
                             gap: 4,
                         }}
                     >
-                        {NAV_ITEMS.map((item) => {
+                        {NAV_ITEMS.filter(item => !item.adminOnly || user?.rol === "Administrador").map((item) => {
                             const Icon = item.icon;
                             return (
                                 <NavLink
@@ -259,15 +261,13 @@ const AdminLayout = () => {
                     </span>
                     <span style={{ display: "flex", gap: 20 }}>
                         <a
-                            href="#"
-                            onClick={(e) => e.preventDefault()}
+                            href="/privacidad"
                             style={{ color: "#a3a3a3", textDecoration: "none" }}
                         >
                             Política de privacidad
                         </a>
                         <a
-                            href="#"
-                            onClick={(e) => e.preventDefault()}
+                            href="/terminos"
                             style={{ color: "#a3a3a3", textDecoration: "none" }}
                         >
                             Términos y condiciones

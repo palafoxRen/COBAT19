@@ -12,6 +12,7 @@ import prestamoRoutes from './routes/prestamoRoutes';
 import digitalRoutes from './routes/digitalRoutes';
 import categoriaRoutes from './routes/categoriaRoutes';
 import reporteRoutes from './routes/reporteRoutes';
+import usuarioRoutes from './routes/usuarioRoutes';
 import { errorHandler } from './middlewares/errorHandler';
 
 dotenv.config();
@@ -26,11 +27,16 @@ if (!process.env.JWT_SECRET) {
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
+// Confía en headers X-Forwarded-* cuando corre detrás de nginx/reverse proxy.
+// Sin esto, req.ip siempre será 127.0.0.1 (la dirección del proxy).
+app.set('trust proxy', 1);
+
 // Helmet: agrega headers de seguridad HTTP (X-Content-Type-Options, CSP, etc.)
 app.use(helmet());
 
 // CORS: solo permite peticiones desde los orígenes configurados en .env.
 // En desarrollo permite localhost:5173 (Vite default) y localhost:5174.
+// En producción, configurar CORS_ORIGINS=https://biblioteca.cobat19.edu.mx
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:5174'];
@@ -54,7 +60,7 @@ app.use('/api/auth/login', loginLimiter);
 // Límite de 1MB para bodies JSON — evita payload payloads gigantes que
 // podrían agotar memoria. Las imágenes se manejan por multer por separado.
 app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Archivos estáticos: PDFs e imágenes almacenados en uploads/
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -86,6 +92,7 @@ app.use('/api/prestamos', prestamoRoutes);
 app.use('/api/digitales', digitalRoutes);
 app.use('/api/categorias', categoriaRoutes);
 app.use('/api/reportes', reporteRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 
 // Middleware de manejo de error
 app.use(errorHandler);

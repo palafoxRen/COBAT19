@@ -9,17 +9,23 @@ import {
     Loader2,
     AlertTriangle,
     Eye,
+    EyeOff,
     File,
+    Lock,
 } from "lucide-react";
 import api, { getImagenUrl } from "../../api/axios";
+import { useAuth } from "../../contexts/useAuth";
 
 export default function DetalleDigital() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [digital, setDigital] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [showPdf, setShowPdf] = useState(false);
+    const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+    const [loadingPdf, setLoadingPdf] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -36,6 +42,56 @@ export default function DetalleDigital() {
             .finally(() => { if (active) setCargando(false); });
         return () => { active = false; };
     }, [id]);
+
+    useEffect(() => {
+        return () => {
+            if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+        };
+    }, [pdfBlobUrl]);
+
+    useEffect(() => {
+        if (showPdf && !pdfBlobUrl && user) {
+            let cancelled = false;
+            (async () => {
+                setLoadingPdf(true);
+                try {
+                    const response = await api.get(
+                        `/digitales/${digital.digital_id}/descargar`,
+                        { responseType: "blob" }
+                    );
+                    if (cancelled) return;
+                    const blob = new Blob([response.data], { type: "application/pdf" });
+                    setPdfBlobUrl(URL.createObjectURL(blob));
+                } catch {
+                    if (!cancelled) setError("No se pudo cargar el PDF. Tu sesión podría haber expirado.");
+                } finally {
+                    if (!cancelled) setLoadingPdf(false);
+                }
+            })();
+            return () => { cancelled = true; };
+        }
+    }, [showPdf, pdfBlobUrl, user, digital]);
+
+    const handleDownload = async () => {
+        if (!digital || !user) return;
+        try {
+            const response = await api.get(
+                `/digitales/${digital.digital_id}/descargar?download=1`,
+                { responseType: "blob" }
+            );
+            const blob = new Blob([response.data], { type: "application/pdf" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${digital.titulo_digital || "libro"}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch {
+            alert("No se pudo descargar el PDF. Tu sesión podría haber expirado.");
+        }
+    };
 
     if (cargando) {
         return (
@@ -58,8 +114,6 @@ export default function DetalleDigital() {
         );
     }
 
-    const pdfUrl = `${api.defaults.baseURL}/digitales/${digital.digital_id}/descargar`;
-    const pdfDownloadUrl = `${pdfUrl}?download=1`;
     const imagen = digital.imagen_url || digital.libro_imagen_url;
     const sinopsis = digital.sinopsis || digital.libro_sinopsis;
 
@@ -158,15 +212,26 @@ export default function DetalleDigital() {
                             </>
                         )}
 
-                        {showPdf && (
+                        {showPdf && user && (
                             <>
                                 <hr style={{ border: "none", borderTop: "1px solid #ececec", margin: "28px 0" }} />
                                 <h2 style={{ fontSize: 19, fontWeight: 700, margin: "0 0 14px" }}>Vista previa del PDF</h2>
-                                <iframe
-                                    src={pdfUrl}
-                                    title={digital.titulo_digital}
-                                    style={{ width: "100%", height: 600, border: "1px solid #ececec", borderRadius: 10 }}
-                                />
+                                {loadingPdf ? (
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 600, border: "1px solid #ececec", borderRadius: 10, gap: 12 }}>
+                                        <Loader2 size={28} color="#7a2333" className="animate-spin" />
+                                        <span style={{ color: "#737373", fontSize: 14 }}>Cargando PDF...</span>
+                                    </div>
+                                ) : pdfBlobUrl ? (
+                                    <iframe
+                                        src={pdfBlobUrl}
+                                        title={digital.titulo_digital}
+                                        style={{ width: "100%", height: 600, border: "1px solid #ececec", borderRadius: 10 }}
+                                    />
+                                ) : (
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 600, border: "1px solid #ececec", borderRadius: 10, background: "#fafafa" }}>
+                                        <p style={{ color: "#737373", fontSize: 14 }}>No se pudo cargar la vista previa</p>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
@@ -179,17 +244,33 @@ export default function DetalleDigital() {
                                 DISPONIBLE EN LÍNEA
                             </div>
                             <div style={{ padding: 20 }}>
-                                <p style={{ fontSize: 13.5, color: "#525252", margin: "0 0 18px", lineHeight: 1.6 }}>
-                                    Este material digital está disponible para consulta y descarga directa.
-                                </p>
-                                <button onClick={() => setShowPdf(!showPdf)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: showPdf ? "#f5e0e3" : "#7a2333", color: showPdf ? "#7a2333" : "#fff", border: showPdf ? "1px solid #7a2333" : "none", borderRadius: 10, padding: "13px 0", fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginBottom: 10 }}>
-                                    <Eye size={16} />
-                                    {showPdf ? "Ocultar PDF" : "Ver PDF en línea"}
-                                </button>
-                                <a href={pdfDownloadUrl} download style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "#fff", color: "#171717", border: "1px solid #e0e0e0", borderRadius: 10, padding: "12px 0", fontSize: 14, fontWeight: 600, cursor: "pointer", textDecoration: "none", marginBottom: 14 }}>
-                                    <Download size={15} />
-                                    Descargar PDF
-                                </a>
+                                {user ? (
+                                    <>
+                                        <p style={{ fontSize: 13.5, color: "#525252", margin: "0 0 18px", lineHeight: 1.6 }}>
+                                            Este material digital está disponible para consulta y descarga directa.
+                                        </p>
+                                        <button onClick={() => setShowPdf(!showPdf)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: showPdf ? "#f5e0e3" : "#7a2333", color: showPdf ? "#7a2333" : "#fff", border: showPdf ? "1px solid #7a2333" : "none", borderRadius: 10, padding: "13px 0", fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginBottom: 10 }}>
+                                            {showPdf ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            {showPdf ? "Ocultar PDF" : "Ver PDF en línea"}
+                                        </button>
+                                        <button onClick={handleDownload} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "#fff", color: "#171717", border: "1px solid #e0e0e0", borderRadius: 10, padding: "12px 0", fontSize: 14, fontWeight: 600, cursor: "pointer", marginBottom: 14 }}>
+                                            <Download size={15} />
+                                            Descargar PDF
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fef3c7", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+                                            <Lock size={18} color="#92400e" />
+                                            <p style={{ fontSize: 13.5, color: "#92400e", margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+                                                Inicia sesión para acceder al contenido digital.
+                                            </p>
+                                        </div>
+                                        <Link to="/login" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", background: "#7a2333", color: "#fff", border: "none", borderRadius: 10, padding: "13px 0", fontSize: 14.5, fontWeight: 700, cursor: "pointer", textDecoration: "none", marginBottom: 14 }}>
+                                            Iniciar sesión
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

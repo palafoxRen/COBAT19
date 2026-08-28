@@ -779,9 +779,19 @@ export default function CatalogoPublico() {
                         marginTop: 32,
                         borderTop: "1px solid #f0f0f0",
                         paddingTop: 20,
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 20,
+                        flexWrap: "wrap",
                     }}
                 >
-                    2026 Biblioteca COBAT 19. Todos los derechos reservados.
+                    <span>2026 Biblioteca COBAT 19. Todos los derechos reservados.</span>
+                    <a href="/privacidad" style={{ color: "#a3a3a3", textDecoration: "none" }}>
+                        Política de privacidad
+                    </a>
+                    <a href="/terminos" style={{ color: "#a3a3a3", textDecoration: "none" }}>
+                        Términos y condiciones
+                    </a>
                 </p>
             </footer>
         </div>

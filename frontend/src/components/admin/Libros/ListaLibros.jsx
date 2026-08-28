@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Pencil, BookOpen, Trash2, Tags } from "lucide-react";
+import { Search, Plus, Pencil, BookOpen, Trash2, Tags, PackagePlus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "../../../api/axios";
 import ConfirmDialog from "../../ConfirmDialog";
@@ -12,6 +12,9 @@ export default function ListaLibros() {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [error, setError] = useState("");
     const [showCategorias, setShowCategorias] = useState(false);
+    const [addEjemplar, setAddEjemplar] = useState(null);
+    const [inventarioInput, setInventarioInput] = useState("");
+    const [agregando, setAgregando] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -42,6 +45,25 @@ export default function ListaLibros() {
             setLibros((prev) => prev.filter((l) => l.id_libro !== id));
         } catch (e) {
             setError(e.response?.data?.message || "Error al eliminar el libro.");
+        }
+    };
+
+    const handleAddEjemplar = async () => {
+        if (!inventarioInput.trim()) return;
+        setAgregando(true);
+        try {
+            await api.post("/ejemplares", {
+                id_libro: addEjemplar.id_libro,
+                libro_inventario: inventarioInput.trim(),
+            });
+            const res = await api.get("/libros");
+            setLibros(res.data.data || []);
+            setAddEjemplar(null);
+            setInventarioInput("");
+        } catch (e) {
+            setError(e.response?.data?.message || "Error al agregar ejemplar.");
+        } finally {
+            setAgregando(false);
         }
     };
 
@@ -297,6 +319,25 @@ export default function ListaLibros() {
                                         </td>
                                         <td style={{ padding: "14px 10px" }}>
                                             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                                <button
+                                                    onClick={() => setAddEjemplar(libro)}
+                                                    title="Agregar ejemplar"
+                                                    style={{
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        width: 32,
+                                                        height: 32,
+                                                        border: "1px solid #bbf7d0",
+                                                        color: "#15803d",
+                                                        background: "#f0fdf4",
+                                                        borderRadius: 8,
+                                                        cursor: "pointer",
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    <PackagePlus size={15} />
+                                                </button>
                                                 <Link
                                                     to={`/admin/libros/${libro.id_libro}/editar`}
                                                     style={{
@@ -367,6 +408,66 @@ export default function ListaLibros() {
 
             {showCategorias && (
                 <GestionCategorias onClose={() => setShowCategorias(false)} />
+            )}
+
+            {addEjemplar && (
+                <div
+                    style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}
+                    onClick={() => { setAddEjemplar(null); setInventarioInput(""); }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ background: "#fff", borderRadius: 14, padding: 28, width: 380, maxWidth: "90%" }}
+                    >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Agregar ejemplar</h3>
+                            <button onClick={() => { setAddEjemplar(null); setInventarioInput(""); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                                <X size={18} color="#737373" />
+                            </button>
+                        </div>
+                        <p style={{ margin: "0 0 6px", fontSize: 13.5, color: "#525252" }}>
+                            Libro: <strong>{addEjemplar.titulo}</strong>
+                        </p>
+                        <p style={{ margin: "0 0 14px", fontSize: 12.5, color: "#a3a3a3" }}>
+                            Ingresa el código de inventario del nuevo ejemplar.
+                        </p>
+                        <input
+                            type="text"
+                            value={inventarioInput}
+                            onChange={(e) => setInventarioInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter" && inventarioInput.trim()) handleAddEjemplar(); }}
+                            placeholder="Código de inventario"
+                            autoFocus
+                            style={{
+                                width: "100%",
+                                border: "1px solid #e0e0e0",
+                                borderRadius: 9,
+                                padding: "10px 14px",
+                                fontSize: 14,
+                                outline: "none",
+                                marginBottom: 16,
+                                boxSizing: "border-box",
+                            }}
+                        />
+                        <button
+                            onClick={handleAddEjemplar}
+                            disabled={!inventarioInput.trim() || agregando}
+                            style={{
+                                width: "100%",
+                                background: inventarioInput.trim() && !agregando ? "#15803d" : "#e0e0e0",
+                                color: inventarioInput.trim() && !agregando ? "#fff" : "#a3a3a3",
+                                border: "none",
+                                borderRadius: 10,
+                                padding: "11px 0",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                cursor: inventarioInput.trim() && !agregando ? "pointer" : "not-allowed",
+                            }}
+                        >
+                            {agregando ? "Agregando..." : "Agregar"}
+                        </button>
+                    </div>
+                </div>
             )}
         </>
     );

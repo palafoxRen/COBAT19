@@ -55,11 +55,11 @@ export const createPrestamo = async (req: AuthRequest, res: Response): Promise<R
             return res.status(409).json({ success: false, message: 'El ejemplar no está disponible' });
         }
 
-        // Si no se proporciona fecha_limite, default 7 días desde hoy
+        // Si no se proporciona fecha_limite, default 3 días desde hoy
         let limite = fecha_limite;
         if (!limite) {
             const hoy = new Date();
-            hoy.setDate(hoy.getDate() + 7);
+            hoy.setDate(hoy.getDate() + 3);
             limite = hoy.toISOString().split('T')[0];
         }
 
@@ -129,7 +129,7 @@ export const devolverPrestamo = async (req: AuthRequest, res: Response): Promise
             return res.status(409).json({ success: false, message: 'El préstamo ya fue devuelto o está vencido' });
         }
 
-        const devolucion = fecha_devolucion || new Date().toISOString().split('T')[0];
+        const devolucion = fecha_devolucion || new Date().toISOString().split('T')[0];  
 
         await client.query(
             'UPDATE prestamos SET fecha_devolucion = $1, estatus_prestamo = $2 WHERE id_prestamo = $3',
