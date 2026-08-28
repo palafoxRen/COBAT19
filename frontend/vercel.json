@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://cobat19-backend.vercel.app/"
+      "destination": "https://cobat19-backend.vercel.app/api/$1"
     },
     {
       "source": "/(.*)",
