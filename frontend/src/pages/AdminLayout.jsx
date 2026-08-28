@@ -19,7 +19,7 @@ const NAV_ITEMS = [
     { to: "/admin/prestamos", label: "Préstamos", icon: ClipboardList },
     { to: "/admin/reportes", label: "Reporte mensual", icon: FileText },
     { to: "/admin/digitales", label: "Libros digitales", icon: BookOpen },
-    { to: "/admin/usuarios", label: "Usuarios", icon: Users, adminOnly: true },
+    { to: "/admin/usuarios", label: "Usuarios", icon: Users },
 ];
 
 const AdminLayout = () => {
@@ -95,7 +95,7 @@ const AdminLayout = () => {
                             gap: 4,
                         }}
                     >
-                        {NAV_ITEMS.filter(item => !item.adminOnly || user?.rol === "Administrador").map((item) => {
+                        {NAV_ITEMS.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <NavLink

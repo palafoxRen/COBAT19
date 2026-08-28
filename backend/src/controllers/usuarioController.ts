@@ -17,7 +17,7 @@ export const listarUsuarios = async (_req: Request, res: Response): Promise<Resp
 };
 
 export const crearUsuario = async (req: AuthRequest, res: Response): Promise<Response> => {
-  const { nombre, correo, contrasena, rol } = req.body;
+  const { nombre, correo, contrasena } = req.body;
 
   if (!nombre?.trim()) {
     return res.status(400).json({ success: false, message: "El nombre es obligatorio" });
@@ -29,7 +29,7 @@ export const crearUsuario = async (req: AuthRequest, res: Response): Promise<Res
     return res.status(400).json({ success: false, message: "La contraseña debe tener al menos 8 caracteres" });
   }
 
-  const rolFinal = rol === "Administrador" ? "Administrador" : "Bibliotecario";
+  const rolFinal = "Bibliotecario";
 
   try {
     const hash = await bcrypt.hash(contrasena, 10);
@@ -51,7 +51,7 @@ export const crearUsuario = async (req: AuthRequest, res: Response): Promise<Res
 
 export const actualizarUsuario = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
-  const { nombre, correo, rol } = req.body;
+  const { nombre, correo } = req.body;
 
   if (!nombre?.trim()) {
     return res.status(400).json({ success: false, message: "El nombre es obligatorio" });
@@ -60,7 +60,7 @@ export const actualizarUsuario = async (req: Request, res: Response): Promise<Re
     return res.status(400).json({ success: false, message: "El correo es obligatorio" });
   }
 
-  const rolFinal = rol === "Administrador" ? "Administrador" : "Bibliotecario";
+  const rolFinal = "Bibliotecario";
 
   try {
     const result = await pool.query(

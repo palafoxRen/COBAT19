@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { uploadDigital, subirImagenDigital, getDigitales, getDigitalPorId, descargarDigital, actualizarDigital, toggleHabilitado, eliminarDigital } from '../controllers/digitalController';
-import { verifyToken, requireRole } from '../middlewares/auth';
+import { verifyToken } from '../middlewares/auth';
 import { uploadPDF, uploadImage } from '../middlewares/upload';
 
 const router = Router();
@@ -10,10 +10,10 @@ const router = Router();
 router.get('/', verifyToken, getDigitales);
 router.get('/:id', getDigitalPorId);
 router.get('/:digital_id/descargar', verifyToken, descargarDigital);
-router.post('/', verifyToken, requireRole('Administrador'), uploadPDF.single('pdf'), uploadDigital);
-router.post('/:id/imagen', verifyToken, requireRole('Administrador'), uploadImage.single('imagen'), subirImagenDigital);
-router.put('/:id', verifyToken, requireRole('Administrador'), actualizarDigital);
-router.patch('/:id/toggle', verifyToken, requireRole('Administrador'), toggleHabilitado);
-router.delete('/:id', verifyToken, requireRole('Administrador'), eliminarDigital);
+router.post('/', verifyToken, uploadPDF.single('pdf'), uploadDigital);
+router.post('/:id/imagen', verifyToken, uploadImage.single('imagen'), subirImagenDigital);
+router.put('/:id', verifyToken, actualizarDigital);
+router.patch('/:id/toggle', verifyToken, toggleHabilitado);
+router.delete('/:id', verifyToken, eliminarDigital);
 
 export default router;

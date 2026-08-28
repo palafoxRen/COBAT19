@@ -364,16 +364,6 @@ export default function GestionUsuarios() {
                             </>
                         )}
 
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 5 }}>Rol</label>
-                        <select
-                            value={form.rol}
-                            onChange={(e) => setForm({ ...form, rol: e.target.value })}
-                            style={{ ...inputBase, marginBottom: 20, cursor: "pointer" }}
-                        >
-                            <option value="Bibliotecario">Bibliotecario</option>
-                            <option value="Administrador">Administrador</option>
-                        </select>
-
                         <button
                             onClick={handleSave}
                             disabled={saving || !form.nombre.trim() || !form.correo.trim() || (!editando && !form.contrasena)}

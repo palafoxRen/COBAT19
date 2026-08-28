@@ -1,0 +1,45 @@
+# Entorno / secretos
+.env
+.env.*
+!.env.example
+
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+build/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Archivos de usuários / uploads
+uploads/
+!uploads/.gitkeep
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Archivos temporales y de backup
+*.bak
+*.orig
+*.tmp
+*.pem
+*.key
+*.p12
+*.pfx
