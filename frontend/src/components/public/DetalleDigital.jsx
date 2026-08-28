@@ -24,8 +24,6 @@ export default function DetalleDigital() {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [showPdf, setShowPdf] = useState(false);
-    const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
-    const [loadingPdf, setLoadingPdf] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -43,54 +41,9 @@ export default function DetalleDigital() {
         return () => { active = false; };
     }, [id]);
 
-    useEffect(() => {
-        return () => {
-            if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-        };
-    }, [pdfBlobUrl]);
-
-    useEffect(() => {
-        if (showPdf && !pdfBlobUrl && user) {
-            let cancelled = false;
-            (async () => {
-                setLoadingPdf(true);
-                try {
-                    const response = await api.get(
-                        `/digitales/${digital.digital_id}/descargar`,
-                        { responseType: "blob" }
-                    );
-                    if (cancelled) return;
-                    const blob = new Blob([response.data], { type: "application/pdf" });
-                    setPdfBlobUrl(URL.createObjectURL(blob));
-                } catch {
-                    if (!cancelled) setError("No se pudo cargar el PDF. Tu sesión podría haber expirado.");
-                } finally {
-                    if (!cancelled) setLoadingPdf(false);
-                }
-            })();
-            return () => { cancelled = true; };
-        }
-    }, [showPdf, pdfBlobUrl, user, digital]);
-
-    const handleDownload = async () => {
-        if (!digital || !user) return;
-        try {
-            const response = await api.get(
-                `/digitales/${digital.digital_id}/descargar?download=1`,
-                { responseType: "blob" }
-            );
-            const blob = new Blob([response.data], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${digital.titulo_digital || "libro"}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch {
-            alert("No se pudo descargar el PDF. Tu sesión podría haber expirado.");
-        }
+    const handleDownload = () => {
+        if (!digital?.url_pdf) return;
+        window.open(getImagenUrl(digital.url_pdf), "_blank");
     };
 
     if (cargando) {
@@ -212,26 +165,15 @@ export default function DetalleDigital() {
                             </>
                         )}
 
-                        {showPdf && user && (
+                        {showPdf && user && digital?.url_pdf && (
                             <>
                                 <hr style={{ border: "none", borderTop: "1px solid #ececec", margin: "28px 0" }} />
                                 <h2 style={{ fontSize: 19, fontWeight: 700, margin: "0 0 14px" }}>Vista previa del PDF</h2>
-                                {loadingPdf ? (
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 600, border: "1px solid #ececec", borderRadius: 10, gap: 12 }}>
-                                        <Loader2 size={28} color="#7a2333" className="animate-spin" />
-                                        <span style={{ color: "#737373", fontSize: 14 }}>Cargando PDF...</span>
-                                    </div>
-                                ) : pdfBlobUrl ? (
-                                    <iframe
-                                        src={pdfBlobUrl}
-                                        title={digital.titulo_digital}
-                                        style={{ width: "100%", height: 600, border: "1px solid #ececec", borderRadius: 10 }}
-                                    />
-                                ) : (
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 600, border: "1px solid #ececec", borderRadius: 10, background: "#fafafa" }}>
-                                        <p style={{ color: "#737373", fontSize: 14 }}>No se pudo cargar la vista previa</p>
-                                    </div>
-                                )}
+                                <iframe
+                                    src={getImagenUrl(digital.url_pdf)}
+                                    title={digital.titulo_digital}
+                                    style={{ width: "100%", height: 600, border: "1px solid #ececec", borderRadius: 10 }}
+                                />
                             </>
                         )}
                     </div>

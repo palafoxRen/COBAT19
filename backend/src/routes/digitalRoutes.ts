@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { uploadDigital, subirImagenDigital, getDigitales, getDigitalPorId, descargarDigital, actualizarDigital, toggleHabilitado, eliminarDigital } from '../controllers/digitalController';
 import { verifyToken } from '../middlewares/auth';
-import { uploadPDF, uploadImage } from '../middlewares/upload';
 
 const router = Router();
 
@@ -10,8 +9,11 @@ const router = Router();
 router.get('/', verifyToken, getDigitales);
 router.get('/:id', getDigitalPorId);
 router.get('/:digital_id/descargar', verifyToken, descargarDigital);
-router.post('/', verifyToken, uploadPDF.single('pdf'), uploadDigital);
-router.post('/:id/imagen', verifyToken, uploadImage.single('imagen'), subirImagenDigital);
+
+// Los archivos (PDF e imagen) los sube el frontend directo a Supabase Storage;
+// estos endpoints solo persisten las URLs públicas (body JSON).
+router.post('/', verifyToken, uploadDigital);
+router.post('/:id/imagen', verifyToken, subirImagenDigital);
 router.put('/:id', verifyToken, actualizarDigital);
 router.patch('/:id/toggle', verifyToken, toggleHabilitado);
 router.delete('/:id', verifyToken, eliminarDigital);

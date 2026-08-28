@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getStoragePublicUrl } from './storage';
 
 // La URL base viene de .env (VITE_API_URL). Se elimina el sufijo /api
 // porque cada interceptor/controlador ya lo incluye en sus paths.
@@ -7,7 +8,7 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http
 export const getImagenUrl = (imagenUrl) => {
     if (!imagenUrl) return null;
     if (imagenUrl.startsWith('http')) return imagenUrl;
-    return imagenUrl;
+    return getStoragePublicUrl(imagenUrl);
 };
 
 const api = axios.create({

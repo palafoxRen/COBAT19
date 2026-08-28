@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import api, { getImagenUrl } from "../../../api/axios";
 import { getDigitalPorId, actualizarDigital, toggleHabilitado } from "../../../api/digitales";
+import { uploadFileToStorage } from "../../../api/storage";
 import ConfirmDialog from "../../ConfirmDialog";
 
 export default function EditarDigital() {
@@ -106,11 +107,8 @@ export default function EditarDigital() {
             });
 
             if (imagenFile) {
-                const fd = new FormData();
-                fd.append("imagen", imagenFile);
-                await api.post(`/digitales/${id}/imagen`, fd, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+                const imagenUrl = await uploadFileToStorage(imagenFile, "images");
+                await api.post(`/digitales/${id}/imagen`, { imagen_url: imagenUrl });
             }
 
             navigate("/admin/digitales");

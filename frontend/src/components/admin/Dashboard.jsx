@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/useAuth";
 import api from "../../api/axios";
+import { uploadFileToStorage } from "../../api/storage";
 
 const esVencido = (p) => {
     if (p.estatus_prestamo !== "Activo" || !p.fecha_limite) return false;
@@ -195,11 +196,8 @@ export default function AdminDashboard() {
             });
 
             if (bookImageFile && res.data?.data?.id_libro) {
-                const fd = new FormData();
-                fd.append("imagen", bookImageFile);
-                await api.post(`/libros/${res.data.data.id_libro}/imagen`, fd, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+                const imagenUrl = await uploadFileToStorage(bookImageFile, "images");
+                await api.post(`/libros/${res.data.data.id_libro}/imagen`, { imagen_url: imagenUrl });
             }
 
             // Recargar datos

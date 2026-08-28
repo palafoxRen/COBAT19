@@ -8,7 +8,6 @@ import {
   subirImagenLibro,
 } from '../controllers/libroController';
 import { verifyToken } from '../middlewares/auth';
-import { uploadImage } from '../middlewares/upload';
 
 const router = Router();
 
@@ -18,6 +17,9 @@ router.get('/:id', obtenerLibroPorId);
 router.post('/', verifyToken, registrarLibro);
 router.put('/:id', verifyToken, actualizarLibro);
 router.delete('/:id', verifyToken, eliminarLibro);
-router.post('/:id/imagen', verifyToken, uploadImage.single('imagen'), subirImagenLibro);
+
+// La imagen la sube el frontend directo a Supabase Storage; este endpoint
+// solo persiste la URL pública (body JSON { imagen_url }).
+router.post('/:id/imagen', verifyToken, subirImagenLibro);
 
 export default router;

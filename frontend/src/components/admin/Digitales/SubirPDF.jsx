@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Upload, BookOpen, FileText, X, ShieldCheck, ImageIcon } from "lucide-react";
 import { uploadDigital } from "../../../api/digitales";
 import api from "../../../api/axios";
+import { uploadFileToStorage } from "../../../api/storage";
 
 export default function SubirPDF() {
     const navigate = useNavigate();
@@ -75,31 +76,31 @@ export default function SubirPDF() {
         setShowLicenseModal(true);
     };
 
-    // Upload de 2 fases: primero se sube el PDF (POST /digitales con FormData),
-    // el backend retorna el digital_id. Si el usuario seleccionó imagen de
-    // portada, se hace un segundo POST con la imagen usando ese digital_id.
+    // Upload: primero se suben los archivos (PDF e imagen) directo a Supabase
+    // Storage desde el navegador, luego se persisten las URLs públicas y los
+    // metadatos vía el backend (JSON).
     const handleConfirmUpload = async () => {
         if (!licenseType || !licenseAccepted) return;
 
         setShowLicenseModal(false);
         setEnviando(true);
         try {
-            const formData = new FormData();
-            formData.append("titulo_digital", titulo.trim());
-            if (sinopsis.trim()) formData.append("sinopsis", sinopsis.trim());
-            if (idLibro) formData.append("id_libro", idLibro);
-            formData.append("pdf", archivo);
-            formData.append("licencia_tipo", licenseType);
+            const urlPdf = await uploadFileToStorage(archivo, "pdfs");
+            let imagenUrl = null;
+            if (imagenFile) {
+                imagenUrl = await uploadFileToStorage(imagenFile, "images");
+            }
 
-            const res = await uploadDigital(formData);
-            const digitalId = res.data?.digital_id;
+            const res = await uploadDigital({
+                titulo_digital: titulo.trim(),
+                sinopsis: sinopsis.trim() || null,
+                id_libro: idLibro || null,
+                url_pdf: urlPdf,
+            });
 
-            if (imagenFile && digitalId) {
-                const fd = new FormData();
-                fd.append("imagen", imagenFile);
-                await api.post(`/digitales/${digitalId}/imagen`, fd, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+            const digitalId = res?.data?.digital_id;
+            if (imagenUrl && digitalId) {
+                await api.post(`/digitales/${digitalId}/imagen`, { imagen_url: imagenUrl });
             }
 
             navigate("/admin/digitales");

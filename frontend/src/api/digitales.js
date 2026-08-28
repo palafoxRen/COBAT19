@@ -10,10 +10,8 @@ export const getDigitalPorId = async (id) => {
     return response.data;
 };
 
-export const uploadDigital = async (formData) => {
-    const response = await api.post('/digitales', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
+export const uploadDigital = async (data) => {
+    const response = await api.post('/digitales', data);
     return response.data;
 };
 

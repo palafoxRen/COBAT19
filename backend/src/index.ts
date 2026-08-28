@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import path from 'path';
 import pool from './config/db';
 import authRoutes from './routes/authRoutes';
 import libroRoutes from './routes/libroRoutes';
@@ -18,25 +17,21 @@ import { errorHandler } from './middlewares/errorHandler';
 dotenv.config();
 
 // Si JWT_SECRET no está definido, el servidor no puede firmar tokens.
-// Es un failsafe para evitar que arranque en producción con config incompleta.
+// En serverless (Vercel) no podemos matar el proceso; lanzamos un error claro.
 if (!process.env.JWT_SECRET) {
-  console.error('[FATAL] JWT_SECRET no definido en el archivo .env');
-  process.exit(1);
+  throw new Error('[FATAL] JWT_SECRET no definido en el archivo .env');
 }
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
-// Confía en headers X-Forwarded-* cuando corre detrás de nginx/reverse proxy.
-// Sin esto, req.ip siempre será 127.0.0.1 (la dirección del proxy).
+// Confía en headers X-Forwarded-* cuando corre detrás de un proxy/reverse proxy.
 app.set('trust proxy', 1);
 
-// Helmet: agrega headers de seguridad HTTP (X-Content-Type-Options, CSP, etc.)
+// Helmet: agrega headers de seguridad HTTP.
 app.use(helmet());
 
 // CORS: solo permite peticiones desde los orígenes configurados en .env.
-// En desarrollo permite localhost:5173 (Vite default) y localhost:5174.
-// En producción, configurar CORS_ORIGINS=https://biblioteca.cobat19.edu.mx
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:5174'];
@@ -46,8 +41,7 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiter para login: máximo 10 intentos por ventana de 15 minutos
-// por IP. Previene fuerza bruta contra credenciales.
+// Rate limiter para login: máximo 10 intentos por ventana de 15 minutos por IP.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -57,13 +51,10 @@ const loginLimiter = rateLimit({
 });
 app.use('/api/auth/login', loginLimiter);
 
-// Límite de 1MB para bodies JSON — evita payload payloads gigantes que
-// podrían agotar memoria. Las imágenes se manejan por multer por separado.
+// Límite de 1MB para bodies JSON. Los archivos ya no pasan por el backend:
+// se suben directo a Supabase Storage desde el frontend.
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-// Archivos estáticos: PDFs e imágenes almacenados en uploads/
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Ruta de estado
 app.get('/api/status', async (_req: Request, res: Response) => {
@@ -97,6 +88,12 @@ app.use('/api/usuarios', usuarioRoutes);
 // Middleware de manejo de error
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`[server]: Servidor corriendo en http://localhost:${PORT}`);
-});
+// En serverless (Vercel) solo se exporta la app; el listener se activa
+// únicamente cuando este archivo se ejecuta directamente (desarrollo local).
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`[server]: Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
+
+export default app;

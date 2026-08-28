@@ -1,46 +1,40 @@
 import { Request, Response } from "express";
-import { writeFileSync, existsSync, unlinkSync } from "fs";
-import path from "path";
 import pool from "../config/db";
 
-const UPLOADS_DIR = path.join(__dirname, "../../uploads");
-const IMAGES_DIR = path.join(__dirname, "../../uploads/images");
-if (!existsSync(IMAGES_DIR)) {
-    const { mkdirSync } = require("fs");
-    mkdirSync(IMAGES_DIR, { recursive: true });
-}
+const SUPABASE_PUBLIC_BASE = process.env.SUPABASE_URL
+  ? `${process.env.SUPABASE_URL}/storage/v1/object/public/${process.env.SUPABASE_BUCKET || 'uploads'}`
+  : null;
 
-// Subir libro digital (PDF): sanitiza el nombre del archivo original
-// reemplazando caracteres especiales por guiones bajos y agregando un
-// timestamp para evitar colisiones de nombres. El archivo se escribe
-// directamente en disco con writeFileSync ya que está en memoria (multer memoryStorage).
+// Devuelve la URL pública de Storage a partir de una url_pdf/imagen_url que
+// puede venir con prefijo o como path relativo.
+export const toPublicUrl = (url: string): string => {
+  if (!url) return url;
+  if (url.startsWith('http')) return url;
+  if (SUPABASE_PUBLIC_BASE) return `${SUPABASE_PUBLIC_BASE}/${url.replace(/^\/+/, '')}`;
+  return url;
+};
+
+// Subir libro digital (PDF): el PDF lo sube el frontend directo a Supabase
+// Storage (bucket público). Este endpoint solo persiste la URL pública y los
+// metadatos del documento.
 export const uploadDigital = async (req: Request, res: Response): Promise<Response> => {
-    const { titulo_digital, id_libro, sinopsis, autor, categoria_id } = req.body;
+    const { titulo_digital, id_libro, sinopsis, autor, categoria_id, url_pdf } = req.body;
 
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: "Debes adjuntar un archivo PDF" });
+    if (!url_pdf || !String(url_pdf).trim()) {
+        return res.status(400).json({ success: false, message: "Debes adjuntar la URL del PDF" });
     }
     if (!titulo_digital || !String(titulo_digital).trim()) {
         return res.status(400).json({ success: false, message: "El título del documento es obligatorio" });
     }
 
     try {
-        const nombreBase = path.basename(req.file.originalname)
-            .replace(/[^a-zA-Z0-9._-]/g, "_")
-            .toLocaleLowerCase();
-        const nombreArchivo = `${Date.now()}_${nombreBase}`;
-        const rutaFisica = path.join(UPLOADS_DIR, nombreArchivo);
-        const urlPdf = `/uploads/${nombreArchivo}`;
-
-        writeFileSync(rutaFisica, req.file.buffer);
-
         const libroId = id_libro && String(id_libro).trim() ? Number(id_libro) : null;
         const catId = categoria_id && String(categoria_id).trim() ? Number(categoria_id) : null;
         const result = await pool.query(
             `INSERT INTO libros_digitales (id_libro, titulo_digital, url_pdf, sinopsis, autor, categoria_id, esta_habilitado)
             VALUES ($1, $2, $3, $4, $5, $6, true)
              RETURNING *`,
-            [libroId, String(titulo_digital).trim(), urlPdf, sinopsis || null, autor || null, catId]
+            [libroId, String(titulo_digital).trim(), url_pdf.trim(), sinopsis || null, autor || null, catId]
         );
 
         return res.status(201).json({ success: true, message: "Libro digital subido exitosamente", data: result.rows[0] });
@@ -50,42 +44,28 @@ export const uploadDigital = async (req: Request, res: Response): Promise<Respon
     }
 };
 
-// Upload de imagen de portada para un digital existente.
-// Guarda en uploads/images/, elimina la imagen anterior si existía
-// para no acumular archivos huérfanos en disco.
+// Actualizar imagen de portada de un digital. La imagen la sube el frontend
+// directo a Storage y aquí se persiste la URL pública.
 export const subirImagenDigital = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
+    const { imagen_url } = req.body;
 
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: "No se envió ninguna imagen" });
+    if (!imagen_url || !String(imagen_url).trim()) {
+        return res.status(400).json({ success: false, message: "No se recibió la URL de la imagen" });
     }
 
     try {
-        const check = await pool.query("SELECT imagen_url FROM libros_digitales WHERE digital_id = $1", [id]);
+        const check = await pool.query("SELECT digital_id FROM libros_digitales WHERE digital_id = $1", [id]);
         if (check.rows.length === 0) {
             return res.status(404).json({ success: false, message: "Libro digital no encontrado" });
         }
 
-        const ext = path.extname(req.file.originalname).toLocaleLowerCase();
-        const nombreArchivo = `digital_${id}_${Date.now()}${ext}`;
-        const rutaFisica = path.join(IMAGES_DIR, nombreArchivo);
-        writeFileSync(rutaFisica, req.file.buffer);
+        await pool.query("UPDATE libros_digitales SET imagen_url = $1 WHERE digital_id = $2", [imagen_url.trim(), id]);
 
-        const imagenUrl = `/uploads/images/${nombreArchivo}`;
-
-        // Eliminar imagen anterior si el digital ya tenía una portada
-        const oldImage = check.rows[0].imagen_url;
-        if (oldImage && oldImage.startsWith("/uploads/images/")) {
-            const oldPath = path.join(__dirname, "../..", oldImage);
-            try { unlinkSync(oldPath); } catch { /* archivo antiguo ya no existe */ }
-        }
-
-        await pool.query("UPDATE libros_digitales SET imagen_url = $1 WHERE digital_id = $2", [imagenUrl, id]);
-
-        return res.json({ success: true, data: { imagen_url: imagenUrl } });
+        return res.json({ success: true, data: { imagen_url: imagen_url.trim() } });
     } catch (error) {
-        console.error("Error al subir imagen:", error);
-        return res.status(500).json({ success: false, message: "Error al subir la imagen" });
+        console.error("Error al actualizar imagen:", error);
+        return res.status(500).json({ success: false, message: "Error al actualizar la imagen" });
     }
 };
 
@@ -132,10 +112,9 @@ export const getDigitalPorId = async (req: Request, res: Response): Promise<Resp
     }
 };
 
-// Descarga/visualización de PDF: por defecto usa Content-Disposition: inline
-// para mostrar el PDF en el navegador. Si se pasa ?download=1, cambia a
-// attachment para forzar descarga. Ambos casos validan que el archivo exista
-// en disco antes de enviarlo.
+// Descarga/visualización de PDF. El PDF vive en Supabase Storage (bucket
+// público), así que este endpoint redirige a la URL pública del objeto para
+// que el navegador lo muestre/descargue directamente.
 export const descargarDigital = async (req: Request, res: Response): Promise<void> => {
     const { digital_id } = req.params;
 
@@ -148,22 +127,11 @@ export const descargarDigital = async (req: Request, res: Response): Promise<voi
             res.status(404).json({ success: false, message: "Libro digital no encontrado" });
             return;
         }
-
-        const nombreArchivo = path.basename(result.rows[0].url_pdf);
-        const rutaFisica = path.join(UPLOADS_DIR, nombreArchivo);
-
-        if (!existsSync(rutaFisica)) {
-            res.status(404).json({ success: false, message: "El archivo PDF no existe en el servidor" });
-            return;
-        }
-
-        const disposition = req.query.download === '1' ? 'attachment' : 'inline';
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `${disposition}; filename="${nombreArchivo}"`);
-        res.sendFile(rutaFisica);
+        const url = toPublicUrl(result.rows[0].url_pdf);
+        res.redirect(url);
     } catch (error) {
-        console.error("Error al descargar libro digital:", error);
-        res.status(500).json({ success: false, message: "Error al descargar el libro digital" });
+        console.error("Error al obtener el PDF:", error);
+        res.status(500).json({ success: false, message: "Error al obtener el PDF" });
     }
 };
 
@@ -230,32 +198,22 @@ export const toggleHabilitado = async (req: Request, res: Response): Promise<Res
     }
 };
 
-// Eliminar digital: primero borra el registro de la BD, luego intenta
-// borrar los archivos físicos (PDF + imagen) de disco. Si los archivos
-// ya no existen, simplemente se ignora el error (catch vacío).
+// Eliminar digital: borra el registro de la BD. Los archivos (PDF + imagen)
+// viven en Supabase Storage; opcionalmente se pueden borrar desde el frontend
+// con el anon key. La URL pública queda huérfana si no se borra, pero no
+// bloquea el funcionamiento.
 export const eliminarDigital = async (req: Request, res: Response): Promise<Response> => {
     const { id } = req.params;
     try {
         const check = await pool.query(
-            "SELECT url_pdf, imagen_url FROM libros_digitales WHERE digital_id = $1",
+            "SELECT digital_id FROM libros_digitales WHERE digital_id = $1",
             [id]
         );
         if (check.rows.length === 0) {
             return res.status(404).json({ success: false, message: "Libro digital no encontrado" });
         }
 
-        const { url_pdf, imagen_url } = check.rows[0];
-
         await pool.query("DELETE FROM libros_digitales WHERE digital_id = $1", [id]);
-
-        if (url_pdf) {
-            const pdfPath = path.join(__dirname, "../..", url_pdf);
-            try { unlinkSync(pdfPath); } catch { /* ya no existe */ }
-        }
-        if (imagen_url && imagen_url.startsWith("/uploads/images/")) {
-            const imgPath = path.join(__dirname, "../..", imagen_url);
-            try { unlinkSync(imgPath); } catch { /* ya no existe */ }
-        }
 
         return res.json({ success: true, message: "Libro digital eliminado" });
     } catch (error) {

@@ -13,6 +13,7 @@ import {
     Trash2,
 } from "lucide-react";
 import api, { getImagenUrl } from "../../../api/axios";
+import { uploadFileToStorage } from "../../../api/storage";
 import ConfirmDialog from "../../ConfirmDialog";
 
 export default function EditarLibro() {
@@ -130,11 +131,8 @@ export default function EditarLibro() {
             await api.put(`/libros/${id}`, payload);
 
             if (imagenFile) {
-                const fd = new FormData();
-                fd.append("imagen", imagenFile);
-                await api.post(`/libros/${id}/imagen`, fd, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+                const imagenUrl = await uploadFileToStorage(imagenFile, "images");
+                await api.post(`/libros/${id}/imagen`, { imagen_url: imagenUrl });
             }
 
             navigate("/admin/libros");

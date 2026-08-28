@@ -12,6 +12,7 @@ import {
     X,
 } from "lucide-react";
 import api from "../../../api/axios";
+import { uploadFileToStorage } from "../../../api/storage";
 
 export default function FormularioLibro() {
     const navigate = useNavigate();
@@ -86,15 +87,18 @@ export default function FormularioLibro() {
 
         setSubmitting(true);
         try {
+            // Primero se sube la imagen directo a Supabase Storage (si aplica)
+            // y se obtiene su URL pública.
+            let imagenUrl = null;
+            if (imagenFile) {
+                imagenUrl = await uploadFileToStorage(imagenFile, "images");
+            }
+
             const res = await api.post("/libros", form);
             const nuevoId = res.data.data?.id_libro;
 
-            if (imagenFile && nuevoId) {
-                const fd = new FormData();
-                fd.append("imagen", imagenFile);
-                await api.post(`/libros/${nuevoId}/imagen`, fd, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+            if (imagenUrl && nuevoId) {
+                await api.post(`/libros/${nuevoId}/imagen`, { imagen_url: imagenUrl });
             }
 
             alert("Libro registrado correctamente.");

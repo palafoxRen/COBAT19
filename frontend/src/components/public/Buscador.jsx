@@ -700,7 +700,7 @@ function BookRow({ book }) {
             }}
             onClick={() => {
                 if (book.id_libro) navigate(`/libros/${book.id_libro}`);
-                else if (book.digital_id) window.open(`/api/digitales/${book.digital_id}/descargar`, "_blank");
+                else if (book.digital_id) navigate(`/digitales/${book.digital_id}`);
             }}
         >
             {book.imagen_url ? (
